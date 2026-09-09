@@ -1,0 +1,12 @@
+# macOS
+.DS_Store
+
+# Local OS artifacts
+*.swp
+*.swo
+*~
+
+# Runtime / local state that must never reach Git
+.switcher/
+backups/
+
