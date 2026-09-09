@@ -42,7 +42,9 @@
 - `deepseek-v4-flash` 可以在 Codex Desktop 中正常使用。
 - 官方 Restore 完成后 GPT 配置可正常使用。
 - GPT / DeepSeek 两个 Profile 已固化。
-- 两个 Shortcut 与真实双向切换已由用户确认通过。
+- 两个 Shortcut 与真实双向切换已由用户确认通过（V1.1 确认项）。
+
+以上为 V1.1 阶段的确认结果；V1.3 变更（完整退出升级为 P0、并发锁、models 先行落盘）后的真实 20 次双向切换与第二台 Mac clone+setup 仍属待实机 POC。
 
 因此：
 
@@ -142,9 +144,12 @@
 项目仓库：
 
 ```text
-codex-desktop-switcher/
+codex-switcher/
 │
-├── codex-switcher.sh
+├── bin/
+│   ├── codex-switcher.sh
+│   └── test-deepseek.sh
+├── install.sh
 ├── setup.sh
 ├── README.md
 ├── AGENTS.md
@@ -152,6 +157,8 @@ codex-desktop-switcher/
 ├── codex-switcher-Technical-Architecture-V1.3.md
 ├── Project_Memory.md
 ├── Change_Log.md
+├── .gitignore
+├── 人工测试操作流程.md
 └── tests/
     ├── test-switcher.zsh
     └── test-setup.zsh
@@ -246,7 +253,7 @@ V1 必须：
 - `gpt`
 - `deepseek`
 
-`status` / `restore` 如果不增加明显复杂度可以保留，否则延后。
+> V1 代码实际只实现 `gpt` / `deepseek`（兼容别名 `openai|codex` -> gpt、`deep` -> deepseek）。`status` / `restore` 未实现，延后考虑。
 
 ---
 
@@ -382,29 +389,29 @@ V1 不备份：
 osascript -e 'tell application "Codex" to quit'
 ```
 
-等待：
+完整退出序列（V1.3 P0，与代码一致）：
 
-> 最长 5～10 秒。
+1. Stage A — graceful：`osascript` 触发 `quit`，等待最多 5 秒。
+2. Stage B — TERM：`pkill -TERM`，再等待最多 5 秒。
+3. Stage C — KILL（兜底）：`pkill -KILL` 后等待 1 秒。
 
-如果 Codex 仍未退出：
+如果执行完 Stage C 后仍有残留：
 
 > 中止切换。
 
-V1 默认禁止：
+并且本次切换停止、不修改任何配置。
 
-```bash
-kill -9
-```
-
-原因：
-
-> 避免破坏 Codex 正在写入的本地状态。
+> `KILL` 只在 graceful 与 TERM 均失败后作为最后手段使用；正常退出优先，避免破坏 Codex 正在写入的本地状态。
 
 启动：
 
 ```bash
 open -a Codex
 ```
+
+当前限制：
+
+> `codex://space` 在当前 Codex Desktop 中不是可消费的外部导航路由，只会唤起应用；`codex://threads/new` 属于未公开的内部深链，只能 best-effort 新建 Codex 任务，不能保证打开工作区首页。
 
 ---
 
@@ -596,7 +603,7 @@ GPT
 
 真实端到端状态：
 
-> PASS（用户确认 Profile、Shortcuts 与真实切换均已完成）
+> V1.1 已 PASS（用户确认 Profile、Shortcuts 与真实切换均已完成）。V1.3 变更后的真实 20 次双向切换与第二台 Mac clone+setup：未验证（待实机 POC）。
 
 ---
 

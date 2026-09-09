@@ -1,10 +1,55 @@
 # Change Log
 
-项目：Codex Desktop Switcher
+项目：codex switcher
 
 ---
 
 # Version History
+
+# V1.3 — 回退确认 + V1.3 测试重跑
+
+日期：2026-09-10  
+状态：V1.3 Stable 确认为当前版本
+
+- 产品负责人决定终止 V1.5「多 Runtime 物理会话隔离」方向，本机不合并 V1.5 POC，确认 **V1.3 Stable** 为当前版本。
+- 已回退 V1.5 POC 临时内容（移除 `poc/` 与相关文档条目），工作区回到 V1.3 基线。
+- 命名/软件名一致性检查：全仓统一 `codex-switcher`（无残留旧名 `codex-switch` 的实际使用），软件名统一为「codex switcher」。
+- 已严格重跑 V1.3 自动化测试：`tests/test-switcher.zsh`（静默成功、可见错误、双向、20 次连续切换、备份轮转、预检保护、中断安全、auth.json 不变式）与 `tests/test-setup.zsh`（安装、Profile 捕获、权限、人工确认保护）均 **PASS**；`./setup.sh check` 五项均 OK；备份 20 份；权限正确；Git 未跟踪/未暂存任何 Profile 或 Secret。
+
+## 待实机 POC（未在本机会话内执行）
+
+- 真实 Codex 完整退出 → 切换 → 重启；
+- 20 次真实双向切换；
+- 第二台用户名不同 Mac clone + setup；
+- Shortcut 一键切换 + 真实模型调用确认。
+
+说明：以上需要真实退出并重启 Codex Desktop 与人工确认模型调用，无法从正在运行的 Codex 会话内执行。
+
+---
+
+# V1.4 评估 — 拒绝架构扩展，确认 auth.json 不变式
+
+日期：2026-09-09  
+状态：评估完成，未实施 V1.4 架构
+
+结论：
+
+> V1.4 文档的 Provider Adapter、lib/scripts/logs/state.json 目录结构、字段级 Patch、Session Namespace 隔离与 CC Switch 预留与范围约束冲突，**不实施**。只采纳 P0「Switcher 永不触碰 `~/.codex/auth.json`」。
+
+变更：
+
+- `tests/test-switcher.zsh`：新增 `auth.json` 哨兵不变式测试，验证正常切换、连续切换与中断路径均不创建 / 改写 / 删除 `~/.codex/auth.json`。
+- 对原上传版 V1.4 文档做了基于实机证据的核对与修正（auth.json / Session Namespace / GPT model_provider / 命名 / 目录结构），并以 V1.3 对齐；V1.4 文档文件已随回退移除。
+- 实机只读证据：`~/.codex/sessions` 为按日期扁平树；`session_index.jsonl` 仅含 `id`、`thread_name`、`updated_at`，无 provider；单会话文件内记录 `model` 与 `model_provider` 元数据 → 会话存储不按 Provider 分区，原 V1.4「Session Namespace」机制不成立。
+
+未采纳项（保留在产品决策，需产品负责人确认）：
+
+- Provider Adapter / CC Switch 预留。
+- `lib/`、`scripts/`、`logs/`、`state/state.json` 目录结构。
+- 字段级配置 Patch（当前保持已验证快照整体替换）。
+- Session Namespace 隔离（通过 `model_provider` 区分 GPT / DeepSeek 会话，未经验证）。
+
+---
 
 # V1.3 — Reliability P0 + Unified Naming
 
@@ -23,7 +68,7 @@
 - 更新 `setup.sh`、README、AGENTS、.gitignore、测试脚本，统一命名与约束。
 - PRD / Technical Architecture 文档名统一为 `codex-switcher-*-V1.3.md`（不再使用 `Codex_Desktop_Switcher_` 前缀）。
 - 修复进程匹配：Codex Desktop 实际为 `/Applications/ChatGPT.app`，改用 `Contents/(MacOS|Frameworks)` 匹配，切换脚本可自动退出 Codex，无需手动退出。
-- 切换启动后深链 `codex://threads/new` 直达 Codex 页面，避免默认进入 ChatGPT 聊天页。
+- 切换启动后 best-effort 调用内部深链 `codex://threads/new` 新建 Codex 任务；该内部路由不保证应用冷启动时的最终落点。
 
 ## 验证
 
@@ -245,7 +290,15 @@ chmod 700 ~/.codex/switcher
 
 # Bug 记录
 
-暂无。
+## Bug #001 — 无法稳定直达 Codex 工作区首页
+
+日期：2026-09-09
+
+状态：不修复（当前 Codex Desktop 能力限制）
+
+- `codex://space` 实机验证仍进入 GPT 默认聊天区。
+- 本机应用包检查确认该 URL 不是可消费的外部导航路由。
+- 已回退无效实现，不继续扩大 MVP。
 
 ---
 

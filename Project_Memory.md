@@ -1,7 +1,7 @@
 # Project Memory
 
-项目：Codex Desktop Switcher  
-最后更新时间：2026-09-09
+项目：codex switcher  
+最后更新时间：2026-09-10
 
 ---
 
@@ -54,6 +54,15 @@
 ---
 
 # 3. 关键决策记录
+
+## Decision 000 — 终止 V1.5，确认 V1.3 Stable
+
+日期：2026-09-10
+
+产品负责人决定终止 V1.5「多 Runtime 物理会话隔离」方向，不合并 V1.5 POC，确认 **V1.3 Stable** 为当前版本。已回退 V1.5 POC 临时内容（`poc/` 及文档条目），并严格重跑 V1.3 自动化测试（`test-switcher.zsh` / `test-setup.zsh` 均 PASS）。真实退出/重启 Codex 的实机 POC 仍需在 Codex 会话外执行。
+
+> 不要再次提出「多 Runtime 物理会话隔离」或「Session Namespace 隔离」方向。
+
 
 ## Decision 001 — 不开发 Mac 原生软件
 
@@ -216,6 +225,46 @@ GPT Profile：
 
 ---
 
+## Decision 008 — 不继续实现工作区首页直达
+
+日期：2026-09-09
+
+结论：
+
+> 当前 Codex Desktop 无法通过公开、稳定的深链直接进入工作区首页，保持原启动逻辑，不继续增加绕行方案。
+
+依据：
+
+- `codex://space` 实机验证仍进入 GPT 默认聊天区。
+- 当前应用包的外部路由解析对 `space` 返回空结果，后续 `spacePage` 处理也是空操作。
+- `codex://threads/new` 只能导航到新建 Codex 任务，不等同于工作区首页，且没有官方稳定性承诺。
+
+---
+
+## Decision 009 — V1.4 评估：不实施架构扩展，确认 auth.json 不变式
+
+日期：2026-09-09
+
+结论：
+
+> V1.4 文档中的「Provider Adapter / lib+scripts+logs+state.json 结构 / 字段级 Patch / Session Namespace 隔离 / CC Switch 预留」与既有范围约束冲突，**不实施**。唯一确认采纳的是 P0「Switcher 永不触碰 `~/.codex/auth.json`」——该要求现状已满足，现补充为显式回归测试。
+
+依据：
+
+- 现有 `bin/codex-switcher.sh` 只操作 `config.toml`、`models.json`、`switcher/state` 与 `profiles/`，从不引用 `auth.json`。
+- 实机 Profile 事实：GPT `gpt.toml` 无 `model_provider` 行，仅 `model = "gpt-5.6-sol"`；DeepSeek `deepseek.toml` 才有 `model_provider = "deepseek"` 与 `[model_providers.deepseek]`。V1.4「GPT → model_provider=openai」是对已验证快照的猜测，违背「已验证快照 > 自动推断配置」与「不尝试猜 GPT 默认配置」。
+- Session Namespace 隔离是 Codex 运行时行为，无法仅靠 `model_provider` 从配置层保证，配置为未验证假设；按「当前真实需求 > 提前扩展」暂不投入。
+- 字段级 Patch 与 Provider Adapter 属架构扩展，违背「MVP > 完整系统 / 简单脚本 > 原生 App / 不主动扩展功能」。
+- V1.4 文档路径使用 `codex-switch.sh`，与本项目命名约定 `codex-switcher.sh` 不一致，不可直接照搬。
+- 会话存储实机证据：`~/.codex/sessions` 为按日期扁平树；`session_index.jsonl` 仅 `id`/`thread_name`/`updated_at` 三字段，无 provider；单会话文件内记录 `payload.model` 与 `payload.model_provider`。→ Provider 是会话内容元数据，不是存储分区维度；无法通过 `model_provider` 实现 Session Namespace 隔离。
+
+实施：
+
+- `tests/test-switcher.zsh` 新增 auth.json 哨兵不变式：切换 / 多次切换 / 中断路径均不得改动 `~/.codex/auth.json`。
+- 对原上传版 V1.4 文档做了基于实机证据的核对与修正（PRD + Technical Architecture 对齐 V1.3），固化「已采纳 / 不采纳」结论；V1.4 文档文件已随回退移除，仅保留本条决策。
+
+---
+
 # 4. 产品取舍
 
 ## 当前主动放弃
@@ -304,7 +353,13 @@ V1 处理：
 
 当前：
 
-> V1.1 已完成，保持稳定使用。
+> V1.3 代码已落 / 待目标 Mac 实机 POC。
+
+待实机 POC：
+
+- 真实 Codex 完整退出验证。
+- 20 次真实双向切换。
+- 第二台用户名不同的 Mac clone + setup。
 
 只有发生以下情况才继续开发：
 

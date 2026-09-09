@@ -6,7 +6,7 @@
 
 项目：
 
-> Codex Desktop Switcher
+> codex switcher
 
 负责：
 
@@ -249,6 +249,8 @@ Shortcut 目标参数使用 `gpt` / `deepseek`。兼容别名 `openai|codex`（-
 - 两个已验证 Profile、Shortcuts 与真实双向切换验收已由用户确认完成。
 - V1.1 正常切换必须静默，错误仍写入 stderr。
 - V1.3 已把“完整退出 Codex.app 再切配置”确认为 P0：graceful -> TERM -> KILL -> 确认 `/Codex.app/Contents/` 零残留；有残留则中止且不修改配置。
+- `codex://space` 已确认不能作为外部工作区导航路由；不要再次引入。当前只保留原启动逻辑，工作区首页直达不做。
+- V1.4 已评估（不采纳，文档随回退移除）：实机会话存储不按 Provider 分区（`session_index.jsonl` 仅 `id`/`thread_name`/`updated_at`），「Session Namespace」机制不成立；Provider Adapter / lib+logs+state.json 结构 / 字段级 Patch 均不采纳。仅采纳 auth.json 不变式（Switcher 绝不写 `~/.codex/auth.json`，已用回归测试固化）。不要再次提出这些架构项。
 - 仓库运行根目录固定为 `$HOME/.codex/switcher/`；`install.sh` 负责 Git 分发/更新，`setup.sh` 负责本机初始化。
 - 首次初始化 `setup.sh init-deepseek` 会提示输入 DeepSeek API Key（不回显）并先做 Responses API 验证；API Key 只在本机 `profiles/deepseek.toml`，**严禁**进入 Git / 日志 / README / Shortcut。
 

@@ -1,6 +1,6 @@
-# Codex Desktop Switcher
+# codex switcher
 
-用两个 macOS Shortcut，在已经人工验证过的 Codex/OpenAI 与 DeepSeek 配置快照之间一键切换。
+用两个 macOS Shortcut，在已经人工验证过的 Codex GPT 与 DeepSeek 配置快照之间一键切换。
 
 ## 当前状态
 

@@ -24,7 +24,7 @@ usage() {
 }
 
 fail() {
-  print -u2 -r -- "Codex Switcher setup: $1"
+  print -u2 -r -- "codex switcher setup: $1"
   exit 1
 }
 

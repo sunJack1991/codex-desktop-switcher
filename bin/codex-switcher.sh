@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-# Codex Desktop Switcher — provider switcher
+# codex switcher — provider switcher
 # macOS only. Success is fully silent; every error goes to stderr.
 #
 # Usage:
@@ -50,7 +50,7 @@ usage() {
 
 fail() {
   local message="$1"
-  print -u2 -r -- "Codex Switcher: $message"
+  print -u2 -r -- "codex switcher: $message"
   exit 1
 }
 
@@ -283,7 +283,7 @@ main() {
   config_stage=""
 
   if ! /bin/mv -f "$state_stage" "$STATE_PATH"; then
-    print -u2 -r -- "Codex Switcher: 配置已切换，但状态文件写入失败。"
+    print -u2 -r -- "codex switcher: 配置已切换，但状态文件写入失败。"
   else
     state_stage=""
   fi
@@ -292,7 +292,7 @@ main() {
 
   if (( TEST_MODE == 0 )); then
     if ! /usr/bin/open -a Codex; then
-      print -u2 -r -- "Codex Switcher: 配置已切换到 $target，但 Codex 启动失败。"
+      print -u2 -r -- "codex switcher: 配置已切换到 $target，但 Codex 启动失败。"
       exit 1
     fi
     # 默认打开的是 ChatGPT 聊天页；用深链直达 Codex 页面（新建 Codex 线程）。

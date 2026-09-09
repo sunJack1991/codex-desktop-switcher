@@ -1,7 +1,7 @@
 #!/bin/zsh
 set -euo pipefail
 
-# Codex Desktop Switcher — bootstrap installer / updater
+# codex switcher — bootstrap installer / updater
 # Target is always: $HOME/.codex/switcher
 #
 # Usage A — one command, explicit repo URL:

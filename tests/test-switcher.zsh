@@ -38,6 +38,11 @@ print -r -- 'provider = "deepseek"' > "$PROFILE_DIR/deepseek.toml"
 print -r -- '{"models":["deepseek-v4-flash"]}' > "$PROFILE_DIR/models.deepseek.json"
 /bin/chmod 600 "$TEST_CODEX_DIR/config.toml" "$PROFILE_DIR"/*
 
+# auth.json 不变式：Switcher 必须绝不创建 / 改写 / 删除 ~/.codex/auth.json。
+# 用带内容的哨兵文件证明整个切换流程（含 DeepSeek 路径与中断路径）都不会触碰它。
+print -r -- 'sentinel-auth-json-content' > "$TEST_CODEX_DIR/auth.json"
+auth_json_before=$(/usr/bin/shasum -a 256 "$TEST_CODEX_DIR/auth.json")
+
 success_output=$(/usr/bin/env \
   CODEX_SWITCHER_TEST_MODE=1 \
   CODEX_SWITCHER_TEST_CODEX_DIR="$TEST_CODEX_DIR" \
@@ -46,6 +51,8 @@ success_output=$(/usr/bin/env \
 assert_file_equals "$TEST_CODEX_DIR/config.toml" "$PROFILE_DIR/deepseek.toml" "DeepSeek 配置未正确安装"
 assert_file_equals "$TEST_CODEX_DIR/models.json" "$PROFILE_DIR/models.deepseek.json" "DeepSeek models 未正确安装"
 [[ "$(<"$TEST_CODEX_DIR/switcher/state")" == "deepseek" ]] || fail "DeepSeek 状态错误"
+auth_json_after_switch=$(/usr/bin/shasum -a 256 "$TEST_CODEX_DIR/auth.json")
+[[ "$auth_json_before" == "$auth_json_after_switch" ]] || fail "切换流程修改了 auth.json"
 initial_backups=("$BACKUP_DIR"/config_*.toml(N))
 (( ${#initial_backups} == 1 )) || fail "首次切换应创建一份备份"
 assert_file_equals "${initial_backups[1]}" "$TEST_ROOT/expected-initial-config.toml" "首次备份内容错误"
@@ -98,5 +105,8 @@ assert_file_equals "$TEST_CODEX_DIR/config.toml" "$PROFILE_DIR/gpt.toml" "模拟
 
 config_mode=$(/usr/bin/stat -f '%Lp' "$TEST_CODEX_DIR/config.toml")
 [[ "$config_mode" == "600" ]] || fail "config.toml 权限应为 600，实际为 $config_mode"
+
+auth_json_after_all=$(/usr/bin/shasum -a 256 "$TEST_CODEX_DIR/auth.json")
+[[ "$auth_json_before" == "$auth_json_after_all" ]] || fail "多次切换 / 中断路径后 auth.json 被修改"
 
 print -r -- "PASS: 静默成功、可见错误、双向切换、20 次连续切换、备份轮转、预检保护和中断安全均通过。"
