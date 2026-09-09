@@ -49,7 +49,7 @@
 - 真实 Codex 完整退出验证。
 - 20 次真实双向切换。
 - 第二台用户名不同 Mac clone + setup。
-- Shortcut 改用 `bin/codex-switcher.sh codex|deepseek`，并按需首次授权“允许运行脚本”。
+- Shortcut 改用 `bin/codex-switcher.sh gpt|deepseek`，并按需首次授权“允许运行脚本”。
 
 ---
 

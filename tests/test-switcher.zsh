@@ -50,15 +50,15 @@ initial_backups=("$BACKUP_DIR"/config_*.toml(N))
 (( ${#initial_backups} == 1 )) || fail "首次切换应创建一份备份"
 assert_file_equals "${initial_backups[1]}" "$TEST_ROOT/expected-initial-config.toml" "首次备份内容错误"
 
-run_switch codex
+run_switch gpt
 assert_file_equals "$TEST_CODEX_DIR/config.toml" "$PROFILE_DIR/gpt.toml" "GPT 配置未正确安装"
-[[ "$(<"$TEST_CODEX_DIR/switcher/state")" == "codex" ]] || fail "GPT 状态错误"
+[[ "$(<"$TEST_CODEX_DIR/switcher/state")" == "gpt" ]] || fail "GPT 状态错误"
 
 for iteration in {1..20}; do
   if (( iteration % 2 == 1 )); then
     run_switch deepseek
   else
-    run_switch codex
+    run_switch gpt
   fi
 done
 

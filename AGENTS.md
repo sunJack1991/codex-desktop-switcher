@@ -239,7 +239,7 @@ gpt.toml                   600
 $HOME/.codex/switcher/bin/codex-switcher.sh
 ```
 
-Shortcut 目标参数使用 `codex` / `deepseek`。兼容别名 `gpt|openai`（-> codex）、`deep`（-> deepseek）仍可用。
+Shortcut 目标参数使用 `gpt` / `deepseek`。兼容别名 `openai|codex`（-> gpt）、`deep`（-> deepseek）仍可用。
 
 ## 当前已知
 

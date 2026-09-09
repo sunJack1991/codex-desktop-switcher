@@ -60,11 +60,11 @@ API Key 通过 `read -s` 读取，不回显、不写日志、不进 Git。
 ## 日常切换
 
 ```zsh
-"$HOME/.codex/switcher/bin/codex-switcher.sh" codex
+"$HOME/.codex/switcher/bin/codex-switcher.sh" gpt
 "$HOME/.codex/switcher/bin/codex-switcher.sh" deepseek
 ```
 
-向后兼容别名：`gpt|openai` -> codex，`deep` -> deepseek。
+向后兼容别名：`openai|codex` -> gpt，`deep` -> deepseek。
 
 每次切换都会：
 
@@ -82,12 +82,12 @@ API Key 通过 `read -s` 读取，不回显、不写日志、不进 Git。
 
 在 macOS「快捷指令」中分别创建两个，各添加“运行 Shell 脚本”动作：
 
-- `Codex GPT`：`"/bin/zsh $HOME/.codex/switcher/bin/codex-switcher.sh" codex`
+- `Codex GPT`：`"/bin/zsh $HOME/.codex/switcher/bin/codex-switcher.sh" gpt`
 - `Codex DeepSeek`：`"/bin/zsh $HOME/.codex/switcher/bin/codex-switcher.sh" deepseek`
 
 不要添加“显示通知”“显示提醒”“显示结果”或“快速查看”，并保持“以管理员身份运行”关闭。
 
-> 若之前用的是 `codex-switch.sh`，请更新 Shortcut 命令为 `codex-switcher.sh`，并把目标参数改为 `codex` / `deepseek`。
+> 若之前用的是 `codex-switch.sh`，请更新 Shortcut 命令为 `codex-switcher.sh`，目标参数保持 `gpt` / `deepseek`。
 
 ## 本机私有数据
 

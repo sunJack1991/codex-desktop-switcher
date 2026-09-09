@@ -17,7 +17,7 @@
 - 切换彻底退出升级为 P0：graceful -> TERM -> KILL -> 确认 `/Codex.app/Contents/` 零残留；有残留则中止，不修改配置。
 - 新增并发锁 `$HOME/.codex/switcher/.switch.lock`，避免 Shortcut 连点竞态。
 - 修正备份轮转：按修改时间保留最近 20 份。
-- 目标参数统一为 `codex` / `deepseek`，保留别名 `gpt|openai`（-> codex）、`deep`（-> deepseek）。
+- 目标参数保留 `gpt` / `deepseek`，兼容别名 `openai|codex`（-> gpt）、`deep`（-> deepseek）。
 - 新增 `bin/test-deepseek.sh`：首次 DeepSeek 配置前的 Responses API 人工 POC。
 - 新增 `install.sh`：固定根目录 `$HOME/.codex/switcher` 的 Git 分发/更新入口。
 - 更新 `setup.sh`、README、AGENTS、.gitignore、测试脚本，统一命名与约束。

@@ -4,12 +4,12 @@
 # macOS only. Success is fully silent; every error goes to stderr.
 #
 # Usage:
-#   codex-switcher.sh codex
+#   codex-switcher.sh gpt
 #   codex-switcher.sh deepseek
 #
 # Aliases (still accepted for backward compatibility):
-#   gpt / openai  -> codex
-#   deep          -> deepseek
+#   openai / codex  -> gpt
+#   deep            -> deepseek
 
 set -euo pipefail
 umask 077
@@ -39,8 +39,8 @@ state_stage=""
 lock_held=0
 
 usage() {
-  print -u2 -r -- "Usage: $PROGRAM_NAME codex|deepseek"
-  print -u2 -r -- "Aliases: gpt|openai (-> codex), deep (-> deepseek)"
+  print -u2 -r -- "Usage: $PROGRAM_NAME gpt|deepseek"
+  print -u2 -r -- "Aliases: openai|codex (-> gpt), deep (-> deepseek)"
 }
 
 fail() {
@@ -208,8 +208,8 @@ main() {
   }
 
   case "$target_raw" in
-    codex|gpt|openai)
-      target="codex"
+    gpt|openai|codex)
+      target="gpt"
       profile_path="$PROFILE_DIR/gpt.toml"
       ;;
     deepseek|deep)

@@ -230,7 +230,7 @@ chmod 600 "$HOME/.codex/switcher/profiles/gpt.toml"
 # 8. 核心脚本接口
 
 ```text
-codex-switcher.sh codex
+codex-switcher.sh gpt
 codex-switcher.sh deepseek
 ```
 
@@ -315,7 +315,7 @@ open -a Codex
 ```text
 用户点击 GPT Shortcut
 ↓
-codex-switcher.sh codex
+codex-switcher.sh gpt
 ↓
 检查 gpt.toml
 ↓
