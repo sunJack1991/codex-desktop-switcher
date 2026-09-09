@@ -6,6 +6,34 @@
 
 # Version History
 
+# V1.3 — Reliability P0 + Unified Naming
+
+日期：2026-09-09  
+状态：代码已落 / 待目标 Mac 实机 POC
+
+## 变更
+
+- 主脚本统一命名为 `bin/codex-switcher.sh`（不再使用 `codex-switch.sh`）。
+- 切换彻底退出升级为 P0：graceful -> TERM -> KILL -> 确认 `/Codex.app/Contents/` 零残留；有残留则中止，不修改配置。
+- 新增并发锁 `$HOME/.codex/switcher/.switch.lock`，避免 Shortcut 连点竞态。
+- 修正备份轮转：按修改时间保留最近 20 份。
+- 目标参数统一为 `codex` / `deepseek`，保留别名 `gpt|openai`（-> codex）、`deep`（-> deepseek）。
+- 新增 `bin/test-deepseek.sh`：首次 DeepSeek 配置前的 Responses API 人工 POC。
+- 新增 `install.sh`：固定根目录 `$HOME/.codex/switcher` 的 Git 分发/更新入口。
+- 更新 `setup.sh`、README、AGENTS、.gitignore、测试脚本，统一命名与约束。
+
+## 验证
+
+- `zsh -n`：PASS（全部 shell 文件）。
+- 临时目录自动测试（静默成功、可见错误、双向切换、20 次连续切换、备份轮转、预检保护、中断安全、安装与 Profile 捕获）：PASS。
+- 真实 Codex 完整退出、20 次真实双向切换、第二台 Mac clone+setup：未验证（待实机 POC）。
+
+## 约束
+
+> 所有相关文件统一命名为 `codex-switcher`。
+
+---
+
 # V1.1 — Silent Switching
 
 日期：2026-09-09
@@ -45,7 +73,7 @@
 
 ## 新增
 
-- 新增 `codex-switch.sh`，支持 `gpt` 与 `deepseek` 两个显式目标。
+- 新增 `codex-switcher.sh`，支持 `gpt` 与 `deepseek` 两个显式目标。
 - 新增切换前完整预检、Codex 正常退出与 10 秒超时保护。
 - 新增 `config.toml` 时间戳备份，并自动保留最近 20 份。
 - 新增同文件系统暂存与原子替换；DeepSeek models 先安装，config 最后提交。
@@ -224,7 +252,7 @@ chmod 700 ~/.codex/switcher
 
 已完成：
 
-- `codex-switch.sh`
+- `codex-switcher.sh`
 - `setup.sh`
 - backup
 - macOS Notification

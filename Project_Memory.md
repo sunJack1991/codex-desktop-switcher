@@ -29,7 +29,7 @@
 
 当前版本：
 
-> V1.1 Completed
+> V1.3 代码已就位 / 待目标 Mac 实机 POC
 
 已完成：
 
@@ -37,20 +37,19 @@
 - `deepseek-v4-flash` 人工验证可用。
 - 官方 DeepSeek Codex 配置流程已跑通到 DeepSeek 使用阶段。
 - 产品方案已经收敛到最小版本。
-- 5 个项目文档已更新。
-- 已实现 `codex-switch.sh`：预检、正常退出、备份、原子替换、备份轮转和静默重启。
-- 已实现 `setup.sh`：安装脚本并在人工确认后捕获私有 Profile。
-- 已增加纯 zsh 自动测试，不读写真实 Codex 配置。
-- 已通过临时目录中的双向切换、20 次连续切换、备份轮转、缺文件保护和中断安全测试。
-- GPT、DeepSeek 与 DeepSeek models 三个私有快照已存在且权限正确。
-- GPT Restore、Shortcut 和真实双向切换已由用户确认通过。
-- V1.1 已移除正常通知、成功输出和启动确认检测，错误仍输出到 stderr。
+- 已实现 `bin/codex-switcher.sh`：预检、完整退出 Codex.app（graceful -> TERM -> KILL -> 零残留）、并发锁、备份轮转、原子替换、静默重启。
+- 已实现 `bin/test-deepseek.sh`：首次 DeepSeek 配置前的 Responses API 人工 POC。
+- 已实现 `install.sh`：固定根目录 `$HOME/.codex/switcher` 的 Git 分发/更新。
+- 已实现 `setup.sh`：install / save-deepseek / save-gpt / check。
+- 已更新 README、AGENTS、Change_Log、.gitignore，统一命名为 `codex-switcher`。
+- 临时目录自动测试全部通过（静默、可见错误、双向、20 次、轮转、预检、中断安全、安装/捕获）。
 
-当前无需继续开发：
+待实机 POC：
 
-- 保持 MVP 稳定使用。
-- Codex 配置变化后，按已验证流程刷新 Profile。
-- 只有出现真实问题或高频新需求时再进入下一版本。
+- 真实 Codex 完整退出验证。
+- 20 次真实双向切换。
+- 第二台用户名不同 Mac clone + setup。
+- Shortcut 改用 `bin/codex-switcher.sh codex|deepseek`，并按需首次授权“允许运行脚本”。
 
 ---
 
@@ -243,7 +242,7 @@ GPT Profile：
 ```text
 macOS Shortcut
       ↓
-codex-switch.sh
+codex-switcher.sh
       ↓
 退出 Codex
       ↓
@@ -320,8 +319,8 @@ V1 处理：
 开始修改前先读：
 
 1. `AGENTS.md`
-2. `Codex_Desktop_Switcher_PRD_V1.md`
-3. `Codex_Desktop_Switcher_Technical_Architecture_V1.md`
+2. `Codex_Desktop_Switcher_PRD_V1.3.md`
+3. `Codex_Desktop_Switcher_Technical_Architecture_V1.3.md`
 4. `Project_Memory.md`
 5. `Change_Log.md`
 6. 实际代码

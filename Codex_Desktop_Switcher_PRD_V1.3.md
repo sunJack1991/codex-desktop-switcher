@@ -1,8 +1,8 @@
-# Codex_Desktop_Switcher_PRD_V1
+# Codex_Desktop_Switcher_PRD_V1.3
 
-版本：V1.1  
+版本：V1.3 增量（含 V1.1）  
 日期：2026-09-09  
-状态：MVP 已完成，V1.1 静默交互已实现
+状态：V1.3 代码已落 / 待实机 POC；此前 V1.1 已完成
 
 ---
 
@@ -340,7 +340,7 @@ North Star Metric：
 
 必须：
 
-- `codex-switch.sh`
+- `codex-switcher.sh`
 - GPT Profile
 - DeepSeek Profile
 - 配置备份

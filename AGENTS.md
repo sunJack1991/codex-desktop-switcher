@@ -190,8 +190,8 @@ gpt.toml                   600
 
 必须维护：
 
-- `Codex_Desktop_Switcher_PRD_V1.md`
-- `Codex_Desktop_Switcher_Technical_Architecture_V1.md`
+- `Codex_Desktop_Switcher_PRD_V1.3.md`
+- `Codex_Desktop_Switcher_Technical_Architecture_V1.3.md`
 - `Project_Memory.md`
 - `Change_Log.md`
 - `AGENTS.md`
@@ -229,14 +229,28 @@ gpt.toml                   600
 
 # 10. 给未来 Codex 的提醒
 
-当前已知：
+## 命名规范（产品负责人 2026-09-09 明确）
+
+> 所有相关文件统一命名为 `codex-switcher`，不再使用 `codex-switch`。
+
+主脚本固定为：
+
+```text
+$HOME/.codex/switcher/bin/codex-switcher.sh
+```
+
+Shortcut 目标参数使用 `codex` / `deepseek`。兼容别名 `gpt|openai`（-> codex）、`deep`（-> deepseek）仍可用。
+
+## 当前已知
 
 - DeepSeek API 接入已经人工验证可用。
 - `deepseek-v4-flash` 已经在 Mac Codex Desktop 中人工验证。
-- 最小 `codex-switch.sh`、`setup.sh` 与临时目录自动测试已完成。
+- 最小 `codex-switcher.sh`、`setup.sh` 与临时目录自动测试已完成。
 - 两个已验证 Profile、Shortcuts 与真实双向切换验收已由用户确认完成。
 - V1.1 正常切换必须静默，错误仍写入 stderr。
+- V1.3 已把“完整退出 Codex.app 再切配置”确认为 P0：graceful -> TERM -> KILL -> 确认 `/Codex.app/Contents/` 零残留；有残留则中止且不修改配置。
+- 仓库运行根目录固定为 `$HOME/.codex/switcher/`；`install.sh` 负责 Git 分发/更新，`setup.sh` 负责本机初始化。
 
 当前下一步：
 
-> 完成 V1.1 静默切换收尾并保持 MVP，不主动扩展功能。
+> 完成 V1.3 实机 POC（20 次双向切换、第二台 Mac clone+setup），保持 MVP，不主动扩展功能。

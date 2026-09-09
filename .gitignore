@@ -9,4 +9,12 @@
 # Runtime / local state that must never reach Git
 .switcher/
 backups/
+profiles/
+logs/
+state
+.switch.lock
 
+# Secrets
+.env
+*.secret
+*.secret.toml

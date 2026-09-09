@@ -1,8 +1,8 @@
-# Codex_Desktop_Switcher_Technical_Architecture_V1
+# Codex_Desktop_Switcher_Technical_Architecture_V1.3
 
-版本：V1.1  
+版本：V1.3 增量（含 V1.1）  
 最后更新时间：2026-09-09  
-状态：MVP Completed
+状态：代码已落 / 待实机 POC；此前 V1.1 Completed
 
 ---
 
@@ -67,7 +67,7 @@
                │
                ▼
 ┌──────────────────────────────┐
-│      codex-switch.sh         │
+│      codex-switcher.sh         │
 │                              │
 │  1. preflight                │
 │  2. quit Codex               │
@@ -144,12 +144,12 @@
 ```text
 codex-desktop-switcher/
 │
-├── codex-switch.sh
+├── codex-switcher.sh
 ├── setup.sh
 ├── README.md
 ├── AGENTS.md
-├── Codex_Desktop_Switcher_PRD_V1.md
-├── Codex_Desktop_Switcher_Technical_Architecture_V1.md
+├── Codex_Desktop_Switcher_PRD_V1.3.md
+├── Codex_Desktop_Switcher_Technical_Architecture_V1.3.md
 ├── Project_Memory.md
 ├── Change_Log.md
 └── tests/
@@ -171,7 +171,7 @@ codex-desktop-switcher/
 │   └── config_YYYYMMDD_HHMMSS.toml
 │
 ├── bin/
-│   └── codex-switch.sh
+│   └── codex-switcher.sh
 │
 └── state
 ```
@@ -230,15 +230,15 @@ chmod 600 "$HOME/.codex/switcher/profiles/gpt.toml"
 # 8. 核心脚本接口
 
 ```text
-codex-switch.sh gpt
-codex-switch.sh deepseek
+codex-switcher.sh codex
+codex-switcher.sh deepseek
 ```
 
 可选：
 
 ```text
-codex-switch.sh status
-codex-switch.sh restore
+codex-switcher.sh status
+codex-switcher.sh restore
 ```
 
 V1 必须：
@@ -255,7 +255,7 @@ V1 必须：
 ```text
 用户点击 DeepSeek Shortcut
 ↓
-codex-switch.sh deepseek
+codex-switcher.sh deepseek
 ↓
 检查 deepseek.toml
 ↓
@@ -315,7 +315,7 @@ open -a Codex
 ```text
 用户点击 GPT Shortcut
 ↓
-codex-switch.sh gpt
+codex-switcher.sh codex
 ↓
 检查 gpt.toml
 ↓
@@ -419,7 +419,7 @@ Shortcut 1：
 执行：
 
 ```bash
-"$HOME/.codex/switcher/bin/codex-switch.sh" gpt
+"$HOME/.codex/switcher/bin/codex-switcher.sh" gpt
 ```
 
 Shortcut 2：
@@ -431,7 +431,7 @@ Shortcut 2：
 执行：
 
 ```bash
-"$HOME/.codex/switcher/bin/codex-switch.sh" deepseek
+"$HOME/.codex/switcher/bin/codex-switcher.sh" deepseek
 ```
 
 两个 Shortcut 只保留 Shell 调用，不增加通知、提醒、显示结果、快速查看或管理员权限。
@@ -715,9 +715,9 @@ Agent 行为：
 ```text
 1. AGENTS.md
 ↓
-2. Codex_Desktop_Switcher_PRD_V1.md
+2. Codex_Desktop_Switcher_PRD_V1.3.md
 ↓
-3. Codex_Desktop_Switcher_Technical_Architecture_V1.md
+3. Codex_Desktop_Switcher_Technical_Architecture_V1.3.md
 ↓
 4. Project_Memory.md
 ↓

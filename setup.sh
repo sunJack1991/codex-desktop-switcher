@@ -5,7 +5,7 @@ umask 077
 
 readonly SCRIPT_DIR="${0:A:h}"
 readonly PROGRAM_NAME="${0:t}"
-readonly SOURCE_SWITCHER="$SCRIPT_DIR/codex-switch.sh"
+readonly SOURCE_SWITCHER="$SCRIPT_DIR/bin/codex-switcher.sh"
 readonly CODEX_DIR="$HOME/.codex"
 readonly CONFIG_PATH="$CODEX_DIR/config.toml"
 readonly MODELS_PATH="$CODEX_DIR/models.json"
@@ -99,9 +99,15 @@ backup_existing_profile() {
 install_switcher() {
   require_regular_file "$SOURCE_SWITCHER" "项目脚本"
   prepare_directories
-  atomic_copy_private "$SOURCE_SWITCHER" "$BIN_DIR/codex-switch.sh"
-  /bin/chmod 700 "$BIN_DIR/codex-switch.sh"
-  print -r -- "已安装：$BIN_DIR/codex-switch.sh"
+  if [[ "$SCRIPT_DIR" == "$SWITCHER_DIR" ]]; then
+    # 仓库已直接运行在固定根目录：脚本本就在 bin/，无需复制。
+    /bin/chmod 700 "$BIN_DIR/codex-switcher.sh"
+    print -r -- "已就绪：$BIN_DIR/codex-switcher.sh"
+  else
+    atomic_copy_private "$SOURCE_SWITCHER" "$BIN_DIR/codex-switcher.sh"
+    /bin/chmod 700 "$BIN_DIR/codex-switcher.sh"
+    print -r -- "已安装：$BIN_DIR/codex-switcher.sh"
+  fi
 }
 
 save_deepseek() {
@@ -143,7 +149,7 @@ check_setup() {
   check_path "$PROFILE_DIR/gpt.toml" "GPT Profile"
   check_path "$PROFILE_DIR/deepseek.toml" "DeepSeek Profile"
   check_path "$PROFILE_DIR/models.deepseek.json" "DeepSeek models 快照"
-  check_path "$BIN_DIR/codex-switch.sh" "已安装的切换脚本"
+  check_path "$BIN_DIR/codex-switcher.sh" "已安装的切换脚本"
 }
 
 main() {

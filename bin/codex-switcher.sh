@@ -1,17 +1,27 @@
 #!/bin/zsh
 
+# Codex Desktop Switcher — provider switcher
+# macOS only. Success is fully silent; every error goes to stderr.
+#
+# Usage:
+#   codex-switcher.sh codex
+#   codex-switcher.sh deepseek
+#
+# Aliases (still accepted for backward compatibility):
+#   gpt / openai  -> codex
+#   deep          -> deepseek
+
 set -euo pipefail
 umask 077
 
 readonly BACKUP_LIMIT=20
-readonly CODEX_PROCESS_NAME="Codex"
 readonly PROGRAM_NAME="${0:t}"
 
 if [[ "${CODEX_SWITCHER_TEST_MODE:-0}" == "1" ]]; then
   readonly CODEX_DIR="${CODEX_SWITCHER_TEST_CODEX_DIR:?CODEX_SWITCHER_TEST_CODEX_DIR is required in test mode}"
   readonly TEST_MODE=1
 else
-  readonly CODEX_DIR="$HOME/.codex"
+  readonly CODEX_DIR="${CODEX_HOME:-$HOME/.codex}"
   readonly TEST_MODE=0
 fi
 
@@ -21,26 +31,31 @@ readonly BACKUP_DIR="$SWITCHER_DIR/backups"
 readonly CONFIG_PATH="$CODEX_DIR/config.toml"
 readonly MODELS_PATH="$CODEX_DIR/models.json"
 readonly STATE_PATH="$SWITCHER_DIR/state"
+readonly LOCK_DIR="$SWITCHER_DIR/.switch.lock"
 
 config_stage=""
 models_stage=""
 state_stage=""
+lock_held=0
 
 usage() {
-  print -u2 -r -- "Usage: $PROGRAM_NAME gpt|deepseek"
+  print -u2 -r -- "Usage: $PROGRAM_NAME codex|deepseek"
+  print -u2 -r -- "Aliases: gpt|openai (-> codex), deep (-> deepseek)"
 }
 
 fail() {
   local message="$1"
-
   print -u2 -r -- "Codex Switcher: $message"
   exit 1
 }
 
 cleanup() {
   local exit_status=$?
-
   trap - EXIT HUP INT TERM
+  if [[ "$lock_held" == "1" ]]; then
+    /bin/rmdir "$LOCK_DIR" >/dev/null 2>&1 || true
+    lock_held=0
+  fi
   if [[ -n "$config_stage" && -e "$config_stage" ]]; then
     /bin/rm -f -- "$config_stage"
   fi
@@ -82,34 +97,57 @@ require_safe_directory() {
   [[ -d "$path" && ! -L "$path" ]] || fail "$label 不存在或不是安全目录：$path"
 }
 
-codex_is_running() {
-  local pgrep_status
-
-  if /usr/bin/pgrep -x "$CODEX_PROCESS_NAME" >/dev/null 2>&1; then
-    return 0
-  else
-    pgrep_status=$?
+acquire_lock() {
+  if ! /bin/mkdir "$LOCK_DIR" 2>/dev/null; then
+    fail "已有一次切换正在进行，请稍后再试。"
   fi
-  (( pgrep_status == 1 )) && return 1
-  fail "无法检查 Codex 进程状态，配置未切换。"
+  lock_held=1
 }
 
-quit_codex() {
-  local attempt
+# /Codex.app/Contents/ 以匹配整个 Desktop App bundle 内的进程，避免误杀 Codex CLI。
+codex_app_running() {
+  /usr/bin/pgrep -f '/Codex\.app/Contents/' >/dev/null 2>&1
+}
 
+wait_for_codex_exit() {
+  local loops="$1"
+  local i=1
+  while (( i <= loops )); do
+    if ! codex_app_running; then
+      return 0
+    fi
+    /bin/sleep 0.5
+    (( i++ ))
+  done
+  return 1
+}
+
+# 必须彻底退出，新 Provider 才能由全新 Codex 进程加载。
+quit_codex_completely() {
   (( TEST_MODE == 1 )) && return 0
-  codex_is_running || return 0
-
-  if ! /usr/bin/osascript -e 'tell application "Codex" to quit' >/dev/null 2>&1; then
-    fail "无法请求 Codex 正常退出，配置未切换。"
+  if ! codex_app_running; then
+    return 0
   fi
 
-  for attempt in {1..10}; do
-    codex_is_running || return 0
-    /bin/sleep 1
-  done
+  # Stage A — graceful
+  /usr/bin/osascript -e 'tell application "Codex" to quit' >/dev/null 2>&1 || true
+  if wait_for_codex_exit 10; then
+    return 0
+  fi
 
-  fail "Codex 在 10 秒内未退出，配置未切换。"
+  # Stage B — TERM
+  /usr/bin/pkill -TERM -f '/Codex\.app/Contents/' >/dev/null 2>&1 || true
+  if wait_for_codex_exit 10; then
+    return 0
+  fi
+
+  # Stage C — KILL, last resort
+  /usr/bin/pkill -KILL -f '/Codex\.app/Contents/' >/dev/null 2>&1 || true
+  /bin/sleep 1
+
+  if codex_app_running; then
+    fail "Codex.app 仍有残留进程，本次切换已停止，配置未修改。"
+  fi
 }
 
 next_backup_path() {
@@ -126,12 +164,16 @@ next_backup_path() {
   print -r -- "$candidate"
 }
 
+# 按修改时间升序（最老在前），只删除超出上限的最老备份，保留最新 BACKUP_LIMIT 份。
 prune_backups() {
   local -a backups
   local index
+  local to_remove
 
   backups=("$BACKUP_DIR"/config_*.toml(N.om))
-  for (( index = BACKUP_LIMIT + 1; index <= ${#backups}; index += 1 )); do
+  (( ${#backups} > BACKUP_LIMIT )) || return 0
+  to_remove=$(( ${#backups} - BACKUP_LIMIT ))
+  for (( index = 1; index <= to_remove; index += 1 )); do
     /bin/rm -f -- "${backups[$index]}"
   done
 }
@@ -154,7 +196,8 @@ stage_file() {
 }
 
 main() {
-  local target="${1:-}"
+  local target
+  local target_raw="${1:-}"
   local profile_path
   local models_profile_path="$PROFILE_DIR/models.deepseek.json"
   local backup_path
@@ -164,11 +207,13 @@ main() {
     exit 2
   }
 
-  case "$target" in
-    gpt)
+  case "$target_raw" in
+    codex|gpt|openai)
+      target="codex"
       profile_path="$PROFILE_DIR/gpt.toml"
       ;;
-    deepseek)
+    deepseek|deep)
+      target="deepseek"
       profile_path="$PROFILE_DIR/deepseek.toml"
       ;;
     *)
@@ -194,6 +239,9 @@ main() {
   /bin/mkdir -p "$BACKUP_DIR"
   /bin/chmod 700 "$SWITCHER_DIR" "$PROFILE_DIR" "$BACKUP_DIR"
 
+  # 预检后立即拿锁，避免 Shortcut 连续点击产生竞态。
+  acquire_lock
+
   config_stage=$(stage_file "$profile_path" "$CODEX_DIR/.config.toml.switch.XXXXXX") || \
     fail "无法暂存 $target Profile，配置未切换。"
   if [[ "$target" == "deepseek" ]]; then
@@ -205,7 +253,7 @@ main() {
   print -r -- "$target" > "$state_stage"
   /bin/chmod 600 "$state_stage"
 
-  quit_codex
+  quit_codex_completely
 
   backup_path=$(next_backup_path)
   if ! /bin/cp -p "$CONFIG_PATH" "$backup_path"; then

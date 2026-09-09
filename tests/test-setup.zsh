@@ -34,7 +34,7 @@ run_setup save-gpt --confirmed-working
 
 /usr/bin/cmp -s "$TEST_CODEX_DIR/switcher/profiles/gpt.toml" "$TEST_CODEX_DIR/config.toml" || \
   fail "GPT Profile 捕获错误"
-[[ -x "$TEST_CODEX_DIR/switcher/bin/codex-switch.sh" ]] || fail "安装后的脚本不可执行"
+[[ -x "$TEST_CODEX_DIR/switcher/bin/codex-switcher.sh" ]] || fail "安装后的脚本不可执行"
 
 for private_path in \
   "$TEST_CODEX_DIR/switcher/profiles/gpt.toml" \
