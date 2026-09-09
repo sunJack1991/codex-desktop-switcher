@@ -1,4 +1,4 @@
-# Codex_Desktop_Switcher_Technical_Architecture_V1.3
+# codex-switcher-Technical-Architecture-V1.3
 
 版本：V1.3 增量（含 V1.1）  
 最后更新时间：2026-09-09  
@@ -148,8 +148,8 @@ codex-desktop-switcher/
 ├── setup.sh
 ├── README.md
 ├── AGENTS.md
-├── Codex_Desktop_Switcher_PRD_V1.3.md
-├── Codex_Desktop_Switcher_Technical_Architecture_V1.3.md
+├── codex-switcher-PRD-V1.3.md
+├── codex-switcher-Technical-Architecture-V1.3.md
 ├── Project_Memory.md
 ├── Change_Log.md
 └── tests/
@@ -715,9 +715,9 @@ Agent 行为：
 ```text
 1. AGENTS.md
 ↓
-2. Codex_Desktop_Switcher_PRD_V1.3.md
+2. codex-switcher-PRD-V1.3.md
 ↓
-3. Codex_Desktop_Switcher_Technical_Architecture_V1.3.md
+3. codex-switcher-Technical-Architecture-V1.3.md
 ↓
 4. Project_Memory.md
 ↓

@@ -1,4 +1,4 @@
-# Codex_Desktop_Switcher_PRD_V1.3
+# codex-switcher-PRD-V1.3
 
 版本：V1.3 增量（含 V1.1）  
 日期：2026-09-09  

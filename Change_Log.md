@@ -21,6 +21,7 @@
 - 新增 `bin/test-deepseek.sh`：首次 DeepSeek 配置前的 Responses API 人工 POC。
 - 新增 `install.sh`：固定根目录 `$HOME/.codex/switcher` 的 Git 分发/更新入口。
 - 更新 `setup.sh`、README、AGENTS、.gitignore、测试脚本，统一命名与约束。
+- PRD / Technical Architecture 文档名统一为 `codex-switcher-*-V1.3.md`（不再使用 `Codex_Desktop_Switcher_` 前缀）。
 
 ## 验证
 

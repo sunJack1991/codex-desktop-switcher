@@ -319,8 +319,8 @@ V1 处理：
 开始修改前先读：
 
 1. `AGENTS.md`
-2. `Codex_Desktop_Switcher_PRD_V1.3.md`
-3. `Codex_Desktop_Switcher_Technical_Architecture_V1.3.md`
+2. `codex-switcher-PRD-V1.3.md`
+3. `codex-switcher-Technical-Architecture-V1.3.md`
 4. `Project_Memory.md`
 5. `Change_Log.md`
 6. 实际代码

@@ -190,8 +190,8 @@ gpt.toml                   600
 
 必须维护：
 
-- `Codex_Desktop_Switcher_PRD_V1.3.md`
-- `Codex_Desktop_Switcher_Technical_Architecture_V1.3.md`
+- `codex-switcher-PRD-V1.3.md`
+- `codex-switcher-Technical-Architecture-V1.3.md`
 - `Project_Memory.md`
 - `Change_Log.md`
 - `AGENTS.md`
