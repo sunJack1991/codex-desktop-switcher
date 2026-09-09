@@ -250,6 +250,7 @@ Shortcut 目标参数使用 `gpt` / `deepseek`。兼容别名 `openai|codex`（-
 - V1.1 正常切换必须静默，错误仍写入 stderr。
 - V1.3 已把“完整退出 Codex.app 再切配置”确认为 P0：graceful -> TERM -> KILL -> 确认 `/Codex.app/Contents/` 零残留；有残留则中止且不修改配置。
 - 仓库运行根目录固定为 `$HOME/.codex/switcher/`；`install.sh` 负责 Git 分发/更新，`setup.sh` 负责本机初始化。
+- 首次初始化 `setup.sh init-deepseek` 会提示输入 DeepSeek API Key（不回显）并先做 Responses API 验证；API Key 只在本机 `profiles/deepseek.toml`，**严禁**进入 Git / 日志 / README / Shortcut。
 
 当前下一步：
 

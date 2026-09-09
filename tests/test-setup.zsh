@@ -28,6 +28,7 @@ print -r -- '{"models":["deepseek-v4-flash"]}' > "$TEST_CODEX_DIR/models.json"
 
 run_setup install
 run_setup save-deepseek --confirmed-working
+run_setup init-deepseek
 
 print -r -- 'provider = "gpt"' > "$TEST_CODEX_DIR/config.toml"
 run_setup save-gpt --confirmed-working

@@ -43,6 +43,14 @@ $HOME/.codex/switcher/install.sh               # Git 分发 / 更新
 "$HOME/.codex/switcher/setup.sh" install
 ```
 
+首次初始化 DeepSeek（当 `profiles/` 还没有 `deepseek.toml` 时）：
+
+```zsh
+"$HOME/.codex/switcher/setup.sh" init-deepseek
+```
+
+它会提示输入 DeepSeek API Key（不回显），先做一次 Responses API 验证，通过后才从当前 DeepSeek 态捕获 Profile。API Key 只存在本机 `profiles/deepseek.toml`，**不会进入 Git**。
+
 首次配置 DeepSeek Profile 前，先做 API POC：
 
 ```zsh

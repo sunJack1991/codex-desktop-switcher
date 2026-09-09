@@ -17,6 +17,7 @@ readonly BIN_DIR="$SWITCHER_DIR/bin"
 usage() {
   print -u2 -r -- "Usage:"
   print -u2 -r -- "  $PROGRAM_NAME install"
+  print -u2 -r -- "  $PROGRAM_NAME init-deepseek"
   print -u2 -r -- "  $PROGRAM_NAME save-deepseek --confirmed-working"
   print -u2 -r -- "  $PROGRAM_NAME save-gpt --confirmed-working"
   print -u2 -r -- "  $PROGRAM_NAME check"
@@ -96,6 +97,11 @@ backup_existing_profile() {
   /bin/chmod 600 "$destination"
 }
 
+is_deepseek_config() {
+  [[ -f "$CONFIG_PATH" ]] && \
+    /usr/bin/grep -Eq '^[[:space:]]*model_provider[[:space:]]*=[[:space:]]*"deepseek"' "$CONFIG_PATH"
+}
+
 install_switcher() {
   require_regular_file "$SOURCE_SWITCHER" "项目脚本"
   prepare_directories
@@ -121,6 +127,32 @@ save_deepseek() {
   atomic_copy_private "$CONFIG_PATH" "$PROFILE_DIR/deepseek.toml"
   atomic_copy_private "$MODELS_PATH" "$PROFILE_DIR/models.deepseek.json"
   print -r -- "已保存经人工确认的 DeepSeek Profile。"
+}
+
+init_deepseek() {
+  if [[ -f "$PROFILE_DIR/deepseek.toml" && -f "$PROFILE_DIR/models.deepseek.json" ]]; then
+    print -r -- "DeepSeek Profile 已存在，不覆盖。"
+    return 0
+  fi
+
+  require_regular_file "$CONFIG_PATH" "当前 Codex 配置"
+  prepare_directories
+
+  [[ -x "$SCRIPT_DIR/bin/test-deepseek.sh" ]] || /bin/chmod +x "$SCRIPT_DIR/bin/test-deepseek.sh"
+  print -r -- "首次初始化 DeepSeek：请输入 DeepSeek API Key（不回显），将先做 API 验证。"
+  "$SCRIPT_DIR/bin/test-deepseek.sh" || \
+    fail "DeepSeek API 验证失败，未生成 Profile。请检查 Key / 网络后重试。"
+
+  if ! is_deepseek_config; then
+    fail "当前 config.toml 不是 DeepSeek 态。请先运行 DeepSeek 官方 Codex setup 后再执行 init-deepseek。"
+  fi
+
+  require_regular_file "$MODELS_PATH" "当前 DeepSeek models.json"
+  backup_existing_profile "$PROFILE_DIR/deepseek.toml" "deepseek"
+  backup_existing_profile "$PROFILE_DIR/models.deepseek.json" "models_deepseek"
+  atomic_copy_private "$CONFIG_PATH" "$PROFILE_DIR/deepseek.toml"
+  atomic_copy_private "$MODELS_PATH" "$PROFILE_DIR/models.deepseek.json"
+  print -r -- "已保存 DeepSeek Profile：$PROFILE_DIR/deepseek.toml"
 }
 
 save_gpt() {
@@ -162,6 +194,13 @@ main() {
         exit 2
       }
       install_switcher
+      ;;
+    init-deepseek)
+      [[ $# -eq 1 ]] || {
+        usage
+        exit 2
+      }
+      init_deepseek
       ;;
     save-deepseek)
       [[ $# -eq 2 ]] || {
