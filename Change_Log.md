@@ -22,6 +22,7 @@
 - 新增 `install.sh`：固定根目录 `$HOME/.codex/switcher` 的 Git 分发/更新入口。
 - 更新 `setup.sh`、README、AGENTS、.gitignore、测试脚本，统一命名与约束。
 - PRD / Technical Architecture 文档名统一为 `codex-switcher-*-V1.3.md`（不再使用 `Codex_Desktop_Switcher_` 前缀）。
+- 修复进程匹配：Codex Desktop 实际为 `/Applications/ChatGPT.app`，改用 `Contents/(MacOS|Frameworks)` 匹配，切换脚本可自动退出 Codex，无需手动退出。
 
 ## 验证
 

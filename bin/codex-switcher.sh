@@ -33,6 +33,11 @@ readonly MODELS_PATH="$CODEX_DIR/models.json"
 readonly STATE_PATH="$SWITCHER_DIR/state"
 readonly LOCK_DIR="$SWITCHER_DIR/.switch.lock"
 
+# Codex Desktop 实际为 /Applications/ChatGPT.app。用 Contents/(MacOS|Frameworks)
+# 匹配主 GUI 与 framework helpers，避免误杀嵌入的 CLI（Contents/Resources/codex）
+# 以及机器上独立的 Codex CLI。
+readonly CODEX_APP_PATTERN="/Applications/ChatGPT.app/Contents/(MacOS|Frameworks)/"
+
 config_stage=""
 models_stage=""
 state_stage=""
@@ -104,9 +109,8 @@ acquire_lock() {
   lock_held=1
 }
 
-# /Codex.app/Contents/ 以匹配整个 Desktop App bundle 内的进程，避免误杀 Codex CLI。
 codex_app_running() {
-  /usr/bin/pgrep -f '/Codex\.app/Contents/' >/dev/null 2>&1
+  /usr/bin/pgrep -f "$CODEX_APP_PATTERN" >/dev/null 2>&1
 }
 
 wait_for_codex_exit() {
@@ -136,13 +140,13 @@ quit_codex_completely() {
   fi
 
   # Stage B — TERM
-  /usr/bin/pkill -TERM -f '/Codex\.app/Contents/' >/dev/null 2>&1 || true
+  /usr/bin/pkill -TERM -f "$CODEX_APP_PATTERN" >/dev/null 2>&1 || true
   if wait_for_codex_exit 10; then
     return 0
   fi
 
   # Stage C — KILL, last resort
-  /usr/bin/pkill -KILL -f '/Codex\.app/Contents/' >/dev/null 2>&1 || true
+  /usr/bin/pkill -KILL -f "$CODEX_APP_PATTERN" >/dev/null 2>&1 || true
   /bin/sleep 1
 
   if codex_app_running; then
