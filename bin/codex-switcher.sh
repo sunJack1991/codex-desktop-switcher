@@ -295,6 +295,8 @@ main() {
       print -u2 -r -- "Codex Switcher: 配置已切换到 $target，但 Codex 启动失败。"
       exit 1
     fi
+    # 默认打开的是 ChatGPT 聊天页；用深链直达 Codex 页面（新建 Codex 线程）。
+    /usr/bin/open "codex://threads/new" >/dev/null 2>&1 || true
   fi
 }
 

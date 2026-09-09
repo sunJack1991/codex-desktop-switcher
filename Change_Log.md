@@ -23,6 +23,7 @@
 - 更新 `setup.sh`、README、AGENTS、.gitignore、测试脚本，统一命名与约束。
 - PRD / Technical Architecture 文档名统一为 `codex-switcher-*-V1.3.md`（不再使用 `Codex_Desktop_Switcher_` 前缀）。
 - 修复进程匹配：Codex Desktop 实际为 `/Applications/ChatGPT.app`，改用 `Contents/(MacOS|Frameworks)` 匹配，切换脚本可自动退出 Codex，无需手动退出。
+- 切换启动后深链 `codex://threads/new` 直达 Codex 页面，避免默认进入 ChatGPT 聊天页。
 
 ## 验证
 
