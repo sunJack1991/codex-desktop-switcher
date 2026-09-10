@@ -55,6 +55,28 @@
 
 # 3. 关键决策记录
 
+## Decision 010 — 安装/卸载入口统一为固定路径
+
+日期：2026-09-10
+
+决策：
+
+> 新 Mac 的首次安装入口收敛为一个远程 bootstrap 命令；运行后仓库统一落在 `$HOME/.codex/switcher`。macOS Shortcut 永远只引用该固定目录和 `$HOME`，不依赖具体用户名。
+
+实现：
+
+- `bootstrap.sh`：Git clone/update → `setup.sh install` → GPT Profile 确认与保存 → DeepSeek 官方 Codex setup → DeepSeek 人工验证 → 保存 DeepSeek Profile → `setup.sh check`。
+- `uninstall.sh`：优先恢复 GPT Profile，再清理 Switcher 与 DeepSeek models / Profile；保留 `auth.json` 与 App。
+- README 顶部提供首次安装、卸载、两颗 Shortcut 的可复制命令。
+
+边界：
+
+- 首次 DeepSeek 接入不能完全无交互：官方 setup 仍要求选择模型、输入 API Key。
+- 日常切换才是完全一键、无需 Terminal。
+- 不为了“完全自动化”而绕过官方 DeepSeek setup 或把 API Key 写进命令行参数 / Git。
+
+---
+
 ## Decision 000 — 终止 V1.5，确认 V1.3 Stable
 
 日期：2026-09-10

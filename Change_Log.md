@@ -6,6 +6,28 @@
 
 # Version History
 
+# V1.3.1 — Quick Bootstrap / Safe Uninstall / Shortcut Docs
+
+日期：2026-09-10  
+状态：已实现，待目标 Mac 实机验证
+
+- 新增 `bootstrap.sh`：从 GitHub 固定安装到 `$HOME/.codex/switcher`，初始化 Switcher，保存 GPT Profile，调用 DeepSeek 官方 Codex setup，并在关键步骤输出成功/失败提示。
+- 新增 `uninstall.sh`：优先恢复 GPT Profile，清理本项目 Switcher、DeepSeek models 快照与本地 DeepSeek Profile；明确保留 `auth.json` 和 Codex / ChatGPT Desktop App。
+- README 顶部新增三组可直接复制的命令：首次安装、一键卸载、macOS Shortcut。
+- 所有 Shortcut 统一引用 `$HOME/.codex/switcher`，不再依赖具体 Mac 用户名。
+- 修正 README 中原有 Shortcut Shell 示例的引号写法。
+- 首次 DeepSeek 接入仍保留官方 setup 的交互式模型选择与 API Key 输入；日常切换保持一键静默。
+
+## 待实机 POC
+
+- 全新 Mac / 新用户目录执行 README 顶部 bootstrap 命令；
+- DeepSeek 官方 setup 完成后，验证 Codex 实际回复与 Profile 捕获；
+- 执行 `uninstall.sh` 后确认 GPT 恢复、Switcher 与 DeepSeek 本地文件清理；
+- iCloud 同步 Shortcut 到不同用户名 Mac，确认无需修改路径。
+
+---
+
+
 # V1.3 — 回退确认 + V1.3 测试重跑
 
 日期：2026-09-10  

@@ -2,6 +2,97 @@
 
 用两个 macOS Shortcut，在已经人工验证过的 Codex GPT 与 DeepSeek 配置快照之间一键切换。
 
+## 🚀 最常用的 3 组命令
+
+### 1. 新 Mac 首次安装：从 GitHub 下载 + 初始化 + DeepSeek 官方接入
+
+先确保 **Codex / ChatGPT Desktop 已安装并至少启动过一次**，且当前 GPT 可以正常使用。
+
+然后在 macOS Terminal 直接运行：
+
+```zsh
+/bin/zsh -c 'tmp="$(mktemp -t codex-switcher-bootstrap)"; curl -fsSL https://raw.githubusercontent.com/sunJack1991/codex-switcher/main/bootstrap.sh -o "$tmp" && /bin/zsh "$tmp"; status=$?; rm -f "$tmp"; exit $status'
+```
+
+该命令会：
+
+1. 从 GitHub 下载仓库到所有 Mac 通用的固定目录：
+
+   ```text
+   $HOME/.codex/switcher
+   ```
+
+2. 初始化 codex-switcher。
+3. 保存当前已确认可用的 GPT Profile。
+4. 调用 **DeepSeek 官方 Codex setup** 完成 DeepSeek 模型接入。
+5. 提示选择 DeepSeek 模型并输入 API Key。
+6. 检查 `config.toml` / `models.json` 和本地 Profile。
+7. 在安装、DeepSeek 接入、Profile 保存及最终初始化成功时分别输出 `✅` 提示。
+
+> DeepSeek 官方 setup 仍然需要首次人工选择模型并输入 API Key。脚本不会把 API Key 写入 Git。
+
+安装成功后，本机固定使用：
+
+```text
+$HOME/.codex/switcher/
+```
+
+因此快捷指令永远引用 `$HOME`，不要写 `/Users/某个用户名`。更换 Mac 后重新运行一次上面的初始化命令即可，快捷指令本身无需修改。
+
+---
+
+### 2. 一键卸载：删除 codex-switcher + 清理本项目 DeepSeek 接入
+
+已安装时运行：
+
+```zsh
+/bin/zsh "$HOME/.codex/switcher/uninstall.sh"
+```
+
+卸载脚本会：
+
+- 优先使用本项目保存的 GPT Profile 恢复 GPT 配置；
+- 删除 `$HOME/.codex/switcher` 整个目录；
+- 删除本项目使用的 DeepSeek `models.json`；
+- 删除本项目 Profile 中保存的 DeepSeek API Key；
+- 保留 `$HOME/.codex/auth.json`；
+- 不删除 Codex / ChatGPT Desktop App；
+- 完成后输出明确的 `✅ 卸载完成` 提示。
+
+> 标准安装流程一定会先保存 GPT Profile，因此正常情况下卸载可以先恢复 GPT 再清理 DeepSeek。若 GPT Profile 缺失，卸载脚本不会盲目覆盖用户其他 Codex 配置。
+
+卸载后如需重装，重新执行上面的“新 Mac 首次安装”命令即可。
+
+---
+
+### 3. macOS 快捷指令：两颗按钮一键切换
+
+在 macOS「快捷指令」中分别创建两个 Shortcut，各添加一个 **运行 Shell 脚本** 动作。
+
+**Codex GPT**
+
+```zsh
+/bin/zsh "$HOME/.codex/switcher/bin/codex-switcher.sh" gpt
+```
+
+**Codex DeepSeek**
+
+```zsh
+/bin/zsh "$HOME/.codex/switcher/bin/codex-switcher.sh" deepseek
+```
+
+建议：
+
+- Shortcut 名称分别使用 `Codex GPT` 和 `Codex DeepSeek`；
+- 不启用“以管理员身份运行”；
+- 不添加“显示结果”“快速查看”等额外动作；
+- 可固定到菜单栏、Dock、桌面或设置键盘快捷键；
+- iCloud 同步 Shortcut 时，由于路径只使用 `$HOME`，不同 Mac 用户名不会导致脚本路径失效。
+
+> 首次安装仍建议在 Terminal 中执行，因为 DeepSeek 官方 setup 需要交互式选择模型和输入 API Key；完成初始化后，日常 GPT / DeepSeek 切换才是真正的一键操作。
+
+---
+
 ## 当前状态
 
 V1.3 代码已就位，待目标 Mac 实机 POC。核心切换逻辑已完成：完整退出 Codex.app、并发锁、原子替换、配置备份轮转、静默成功 / 失败写 stderr。
@@ -24,7 +115,7 @@ Shortcut 永远只引用 `$HOME`，不写具体用户名。
 $HOME/.codex/switcher/bin/codex-switcher.sh    # 日常切换
 $HOME/.codex/switcher/bin/test-deepseek.sh     # 首次 DeepSeek API POC
 $HOME/.codex/switcher/setup.sh                 # 本机幂等初始化
-$HOME/.codex/switcher/install.sh               # Git 分发 / 更新
+$HOME/.codex/switcher/install.sh               # Git 分发 / 更新\n$HOME/.codex/switcher/bootstrap.sh             # 新 Mac 引导式一键初始化\n$HOME/.codex/switcher/uninstall.sh             # 安全卸载 / 清理
 ```
 
 ## 首次设置
@@ -90,8 +181,8 @@ API Key 通过 `read -s` 读取，不回显、不写日志、不进 Git。
 
 在 macOS「快捷指令」中分别创建两个，各添加“运行 Shell 脚本”动作：
 
-- `Codex GPT`：`"/bin/zsh $HOME/.codex/switcher/bin/codex-switcher.sh" gpt`
-- `Codex DeepSeek`：`"/bin/zsh $HOME/.codex/switcher/bin/codex-switcher.sh" deepseek`
+- `Codex GPT`：`/bin/zsh "$HOME/.codex/switcher/bin/codex-switcher.sh" gpt`
+- `Codex DeepSeek`：`/bin/zsh "$HOME/.codex/switcher/bin/codex-switcher.sh" deepseek`
 
 不要添加“显示通知”“显示提醒”“显示结果”或“快速查看”，并保持“以管理员身份运行”关闭。
 
