@@ -2,38 +2,6 @@
 
 用两个 macOS Shortcut，在已经人工验证过的 Codex GPT 与 DeepSeek 官方配置快照之间一键切换。
 
-## 当前原则
-
-**DeepSeek 首次安装和后续模型更新都只使用官方脚本，codex-switcher 不修改 DeepSeek 模型配置。**
-
-官方中文入口：
-
-```zsh
-bash <(curl -fsSL https://cdn.deepseek.com/api-docs/codex-deepseek-setup.sh)
-```
-
-官方英文入口：
-
-```zsh
-bash <(curl -fsSL https://cdn.deepseek.com/api-docs/codex-deepseek-setup-en.sh)
-```
-
-codex-switcher 的职责只有两件事：
-
-1. 首次安装时调用 DeepSeek 官方脚本，并在用户确认可用后原样保存官方生成的 `config.toml` / `models.json`。
-2. 日常在已验证的 GPT / DeepSeek Profile 之间安全切换；需要更新 DeepSeek 模型时，再次执行官方脚本并刷新本地 DeepSeek Profile。
-
-明确不做：
-
-- 不判断 DeepSeek CDN 新旧版本。
-- 不 grep Vision 决定安装流程。
-- 不自行补 `deepseek-v4-flash-vision-exp`。
-- 不修改 DeepSeek 官方 `models.json`。
-- 不改写 DeepSeek Provider 字段。
-- 不移动、删除、伪造 `~/.codex/backup-deepseek`。
-
----
-
 ## 1. 新 Mac 首次安装
 
 前提：Codex / ChatGPT Desktop 已安装并至少启动过一次，当前 GPT 可以正常使用。
