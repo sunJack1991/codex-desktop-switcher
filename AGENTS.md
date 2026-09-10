@@ -2,191 +2,120 @@
 
 ## 1. 项目角色
 
-你是本项目的高级软件工程师。
+项目：codex switcher。
 
-项目：
+目标：用最小、可恢复的 zsh + macOS Shortcuts，在已经人工验证过的 GPT / DeepSeek 配置快照之间切换。
 
-> codex switcher
+产品负责人决定范围；工程实现不得主动扩大 MVP。
 
-负责：
-
-- 理解产品目标。
-- 检查实际代码与本机配置。
-- 编写最小可维护脚本。
-- 保证 Codex 配置可恢复。
-- 不扩大 MVP。
-- 维护项目文档。
-
-我的角色：
-
-- 产品负责人。
-- 产品方向决策者。
-- 决定哪些需求值得继续投入。
-
----
-
-# 2. 核心开发原则
+## 2. 核心原则
 
 优先级：
 
 > 配置安全 > 功能数量
 
-> 简单脚本 > 原生 App
+> DeepSeek 官方安装结果 > Switcher 生成配置
 
 > 已验证快照 > 自动推断配置
 
-> 手动选择模型 > 自动 Router
+> 简单脚本 > 原生 App
 
 > MVP > 完整系统
 
-> 当前真实需求 > 提前扩展
+## 3. V1 技术边界
 
----
-
-# 3. V1 技术边界
-
-V1 只允许：
+允许：
 
 - zsh
-- macOS Shortcuts / Automator
+- macOS Shortcuts
 - macOS 原生命令
-- 本地文件
-- 配置快照
-- 本地备份
-- 成功静默、失败输出终端错误
+- 本地文件快照
+- timestamp backup
+- 原子替换
 
-V1 禁止主动引入：
+禁止主动引入：
 
-- Python 依赖
-- Node.js
-- Swift App
-- Electron
-- Tauri
-- daemon
-- 数据库
-- Web 服务
-- 云端账号
+- Python / Node / Swift / Electron / Tauri
+- daemon / DB / Web 服务
 - 自动 Router
+- DeepSeek 第三方安装器逻辑
 
-如果确实必须引入以上能力：
+## 4. DeepSeek official-only 边界
 
-> 先说明当前 zsh 方案为什么无法解决，再给出边际收益与边际成本，等待产品负责人确认。
-
----
-
-# 4. 当前产品目标
-
-唯一核心目标：
-
-> 点击「Codex GPT」或「Codex DeepSeek」后，安全替换到对应已验证配置，并重新打开 Codex。
-
-不负责：
-
-- 判断任务应该使用什么模型。
-- 保证 GPT / DeepSeek 能力一致。
-- 同时运行两个 Codex。
-- 管理所有 Codex 配置。
-- 统计模型费用。
-
----
-
-# 5. 配置安全规则
-
-任何涉及 `~/.codex/config.toml` 的修改必须遵守：
-
-1. 修改前检查文件存在。
-2. 修改前创建 timestamp backup。
-3. 如果备份失败，立即停止。
-4. 不允许直接编辑真实 API Key。
-5. 不允许把 API Key 输出到日志。
-6. 不允许把 Profile 放入 Git 项目目录。
-7. 切换只使用已经人工验证过的 Profile。
-8. 不尝试“猜”GPT 默认配置。
-9. Codex 无法正常退出时，不切换。
-10. 失败时宁可不启动，也不能破坏配置。
-
-权限：
+首次 DeepSeek 安装固定使用：
 
 ```text
-~/.codex/switcher           700
-deepseek.toml              600
-gpt.toml                   600
+https://cdn.deepseek.com/api-docs/codex-deepseek-setup.sh
 ```
 
----
+必须：
 
-# 6. 开发流程
+1. 官方 shell 下载后原样执行。
+2. 模型菜单、API Key、`config.toml`、`models.json`、`backup-deepseek` 交给官方脚本。
+3. 只有官方安装完成且用户实际验证可用后，才保存 DeepSeek Profile。
+4. 保存 Profile 只做逐字节快照。
 
-## Step 1：理解需求
+禁止：
 
-先判断：
+- CDN 新旧版本判断。
+- grep Vision 决定流程。
+- 从 Flash 派生 Vision。
+- 生成、补齐、删除或 Patch DeepSeek `models.json`。
+- 修改 DeepSeek Provider 字段。
+- 使用 `plutil` / `PlistBuddy` / `awk` 改写 DeepSeek 官方配置。
+- 移动、删除、伪造 `~/.codex/backup-deepseek`。
+- fork / patch DeepSeek 官方 setup。
 
-> 是否直接服务“一键 GPT / DeepSeek 切换”？
+官方 setup 异常时：停止初始化，提示用户直接运行同一官方脚本 / Restore；Switcher 不兜底。
 
-不是则默认不做。
+## 5. 配置安全规则
 
-## Step 2：检查当前状态
+1. 修改 `~/.codex/config.toml` 前必须备份。
+2. 备份失败立即停止。
+3. Codex 未完全退出时不切换。
+4. API Key 不进入 Git、日志、README、Shortcut。
+5. `~/.codex/auth.json` 永不触碰。
+6. 不猜 GPT 默认配置。
+7. 失败时宁可停止，也不能破坏当前配置。
+8. `~/.codex/switcher` 权限 700；Profile 权限 600。
 
-开发前检查：
+## 6. 日常切换
 
-- `AGENTS.md`
+`codex-switcher.sh gpt|deepseek` 只恢复已经人工验证过的 Profile。
+
+DeepSeek 日常快照必须来源于：
+
+> DeepSeek 官方安装 → 用户实际验证 → `save-deepseek` 原样保存。
+
+## 7. 开发流程
+
+修改前检查：
+
+- AGENTS.md
 - PRD
 - Technical Architecture
 - Project Memory
 - Change Log
 - 实际脚本
 - Git diff
-- 当前 `~/.codex/config.toml` 行为假设
 
-## Step 3：最小方案
+实施原则：修改最少文件、增加最少依赖、保留恢复路径。
 
-优先选择：
-
-> 修改最少文件、增加最少依赖、最容易恢复的方案。
-
-## Step 4：实施
-
-要求：
-
-- shell 默认 `set -euo pipefail`
-- 所有路径加引号
-- 备份文件使用 timestamp
-- 不打印 Secret
-- 不做无关重构
-
-## Step 5：验证
+## 8. 验证
 
 至少验证：
 
-1. GPT → DeepSeek
-2. DeepSeek → GPT
-3. Codex 正常退出
-4. Codex 正常启动
-5. 配置备份存在
-6. 连续 20 次切换
-7. DeepSeek API Key 不在 Git
-8. 中途中断后可恢复
+1. `zsh -n`。
+2. GPT → DeepSeek。
+3. DeepSeek → GPT。
+4. Codex 完整退出 / 启动。
+5. 备份存在。
+6. 20 次连续切换。
+7. API Key 不进 Git。
+8. `auth.json` 不变。
+9. bootstrap 不包含 DeepSeek catalog Patch / Vision 派生 / CDN 版本匹配。
 
----
-
-# 7. 输出要求
-
-每次开发结果按以下顺序说明：
-
-1. 当前状态
-2. 发现问题
-3. 推荐方案
-4. 修改文件
-5. 验证结果
-6. 未知与风险
-
-如果不能确认：
-
-> 明确写“未验证”，不得假设已经成功。
-
----
-
-# 8. 项目文档
+## 9. 文档
 
 必须维护：
 
@@ -196,64 +125,6 @@ gpt.toml                   600
 - `Change_Log.md`
 - `AGENTS.md`
 
-产品需求变化：
+## 10. 当前下一步
 
-> 更新 PRD。
-
-技术架构变化：
-
-> 更新 Technical Architecture。
-
-重大决策：
-
-> 更新 Project Memory。
-
-具体修改：
-
-> 更新 Change Log。
-
----
-
-# 9. 当前不要做
-
-- 不要开发 GUI。
-- 不要开发菜单栏。
-- 不要自动选择模型。
-- 不要复制 Codex.app。
-- 不要同时跑两个 Codex。
-- 不要做配置字段级复杂 merge。
-- 不要为了“工程完整”增加 Installer framework。
-- 不要处理不存在的扩展需求。
-
----
-
-# 10. 给未来 Codex 的提醒
-
-## 命名规范（产品负责人 2026-09-09 明确）
-
-> 所有相关文件统一命名为 `codex-switcher`，不再使用 `codex-switch`。
-
-主脚本固定为：
-
-```text
-$HOME/.codex/switcher/bin/codex-switcher.sh
-```
-
-Shortcut 目标参数使用 `gpt` / `deepseek`。兼容别名 `openai|codex`（-> gpt）、`deep`（-> deepseek）仍可用。
-
-## 当前已知
-
-- DeepSeek API 接入已经人工验证可用。
-- `deepseek-v4-flash` 已经在 Mac Codex Desktop 中人工验证。
-- 最小 `codex-switcher.sh`、`setup.sh` 与临时目录自动测试已完成。
-- 两个已验证 Profile、Shortcuts 与真实双向切换验收已由用户确认完成。
-- V1.1 正常切换必须静默，错误仍写入 stderr。
-- V1.3 已把“完整退出 Codex.app 再切配置”确认为 P0：graceful -> TERM -> KILL -> 确认 `/Codex.app/Contents/` 零残留；有残留则中止且不修改配置。
-- `codex://space` 已确认不能作为外部工作区导航路由；不要再次引入。当前只保留原启动逻辑，工作区首页直达不做。
-- V1.4 已评估（不采纳，文档随回退移除）：实机会话存储不按 Provider 分区（`session_index.jsonl` 仅 `id`/`thread_name`/`updated_at`），「Session Namespace」机制不成立；Provider Adapter / lib+logs+state.json 结构 / 字段级 Patch 均不采纳。仅采纳 auth.json 不变式（Switcher 绝不写 `~/.codex/auth.json`，已用回归测试固化）。不要再次提出这些架构项。
-- 仓库运行根目录固定为 `$HOME/.codex/switcher/`；`install.sh` 负责 Git 分发/更新，`setup.sh` 负责本机初始化。
-- 首次初始化 `setup.sh init-deepseek` 会提示输入 DeepSeek API Key（不回显）并先做 Responses API 验证；API Key 只在本机 `profiles/deepseek.toml`，**严禁**进入 Git / 日志 / README / Shortcut。
-
-当前下一步：
-
-> 完成 V1.3 实机 POC（20 次双向切换、第二台 Mac clone+setup），保持 MVP，不主动扩展功能。
+完成 V1.3.8 official-only 首次初始化实机 POC；不要重新引入 V1.3.7 的本地 Vision 派生方案，也不要扩展多 Runtime / Session Namespace / GUI / Router。
