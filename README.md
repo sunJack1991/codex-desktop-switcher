@@ -4,18 +4,24 @@
 
 ## 当前原则
 
-**DeepSeek 首次安装只使用官方脚本，codex-switcher 不修改 DeepSeek 模型配置。**
+**DeepSeek 首次安装和后续模型更新都只使用官方脚本，codex-switcher 不修改 DeepSeek 模型配置。**
 
-官方入口：
+官方中文入口：
 
 ```zsh
 bash <(curl -fsSL https://cdn.deepseek.com/api-docs/codex-deepseek-setup.sh)
 ```
 
+官方英文入口：
+
+```zsh
+bash <(curl -fsSL https://cdn.deepseek.com/api-docs/codex-deepseek-setup-en.sh)
+```
+
 codex-switcher 的职责只有两件事：
 
-1. 首次安装时调用上述官方脚本，并在用户确认可用后原样保存官方生成的 `config.toml` / `models.json`。
-2. 日常在已验证的 GPT / DeepSeek Profile 之间安全切换。
+1. 首次安装时调用 DeepSeek 官方脚本，并在用户确认可用后原样保存官方生成的 `config.toml` / `models.json`。
+2. 日常在已验证的 GPT / DeepSeek Profile 之间安全切换；需要更新 DeepSeek 模型时，再次执行官方脚本并刷新本地 DeepSeek Profile。
 
 明确不做：
 
@@ -84,6 +90,41 @@ Shortcut 始终使用 `$HOME`，不同 Mac 用户名无需修改路径。
 
 ---
 
+## 4. 更新 DeepSeek 模型（只走官方渠道）
+
+当 DeepSeek 发布新模型、更新 Codex 模型目录，或者你希望重新选择当前 DeepSeek 模型时，不修改 codex-switcher 代码，直接重新运行 DeepSeek 官方 setup。
+
+### 中文官方脚本
+
+```zsh
+bash <(curl -fsSL https://cdn.deepseek.com/api-docs/codex-deepseek-setup.sh)
+```
+
+### 英文官方脚本
+
+```zsh
+bash <(curl -fsSL https://cdn.deepseek.com/api-docs/codex-deepseek-setup-en.sh)
+```
+
+中文 / 英文脚本二选一即可，不需要连续执行两遍。模型列表、模型参数、API Key、`config.toml` 和 `models.json` 都以 DeepSeek 官方脚本实际生成结果为准。
+
+官方更新完成后：
+
+1. 打开 Codex，实际确认新的 DeepSeek 模型可以正常回复。
+2. 确认可用后，刷新 codex-switcher 保存的 DeepSeek Profile：
+
+```zsh
+"$HOME/.codex/switcher/setup.sh" save-deepseek --confirmed-working
+```
+
+`save-deepseek` 会先备份旧的 `deepseek.toml` / `models.deepseek.json`，再把当前 DeepSeek 官方生成的 `config.toml` / `models.json` 原样保存为新的 Profile。
+
+这样之后再点击 `Codex DeepSeek` Shortcut，使用的就是最新一次**官方安装 + 人工验证**后的 DeepSeek 模型配置，而不会切回旧模型目录。
+
+如果更新完成后希望继续使用 GPT，直接点击 `Codex GPT` Shortcut 即可。
+
+---
+
 ## 日常切换逻辑
 
 每次切换：
@@ -131,4 +172,4 @@ $HOME/.codex/switcher/
 版本：**V1.3.8 Hotfix**  
 状态：代码已合并 / 待目标 Mac 实机 POC。
 
-V1.3.8 的核心变化：撤销 V1.3.7 的本地 Vision 派生和 CDN 版本匹配，恢复到严格的 **DeepSeek official-only installation boundary**。
+V1.3.8 的核心变化：撤销 V1.3.7 的本地 Vision 派生和 CDN 版本匹配，恢复到严格的 **DeepSeek official-only installation boundary**。README 已补充中文 / 英文官方模型更新流程；更新后通过 `save-deepseek --confirmed-working` 刷新已验证 Profile。
