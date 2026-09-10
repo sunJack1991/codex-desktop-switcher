@@ -6,6 +6,27 @@
 
 # Version History
 
+# V1.3.2 — GPT Models Restore / Stale Uninstall Hotfix
+
+日期：2026-09-10  
+状态：已合并 main，待目标 Mac 实机验证
+
+- 修复旧版 DeepSeek → GPT 只恢复 `config.toml`、可能残留 DeepSeek `models.json` 的问题。
+- `setup.sh save-gpt` 新增 GPT models 基线：`models.gpt.json` / `models.gpt.absent` 二选一。
+- `codex-switcher.sh gpt` 按已验证基线恢复；旧安装无基线时，仅清理与 `models.deepseek.json` 完全一致的文件，不猜、不删未知 models。
+- `uninstall.sh` 改为只恢复/清理可确认归属的配置；当前已是 GPT 时不覆盖现有 GPT config；未知 `models.json` 保留；`auth.json` 永不触碰。
+- README 一键卸载改为先下载 GitHub main 最新 `uninstall.sh`，兼容本机旧版本根本没有卸载脚本的情况。
+- 新增 `tests/test-uninstall.zsh`；扩充 switcher/setup 测试覆盖 GPT models absent、GPT models snapshot 与 legacy 清理。
+- 修正 README 核心路径中误写成字面量 `\\n` 的显示问题。
+
+## 待实机 POC
+
+- 在出现过 `/bin/zsh: can't open input file: .../uninstall.sh` 的旧 Mac 上直接执行 README 新的一键卸载命令。
+- 更新后验证 DeepSeek → GPT，确认 `models.json` 按 GPT 基线恢复或删除。
+- 运行 `./tests/test-switcher.zsh`、`./tests/test-setup.zsh`、`./tests/test-uninstall.zsh`。
+
+---
+
 # V1.3.1 — Quick Bootstrap / Safe Uninstall / Shortcut Docs
 
 日期：2026-09-10  

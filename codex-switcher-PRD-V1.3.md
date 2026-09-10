@@ -1,7 +1,7 @@
 # codex-switcher-PRD-V1.3
 
-版本：V1.3 增量（含 V1.1）  
-日期：2026-09-09  
+版本：V1.3.2 Hotfix（基于 V1.3）  
+日期：2026-09-10  
 状态：V1.3 代码已落 / 待实机 POC；此前 V1.1 已完成
 
 ---
@@ -153,6 +153,8 @@
 ~/.codex/switcher/
 ├── profiles/
 │   ├── gpt.toml
+│   ├── models.gpt.json        # GPT 原本存在 models.json 时
+│   ├── models.gpt.absent      # GPT 原本不存在 models.json 时（二选一）
 │   ├── deepseek.toml
 │   └── models.deepseek.json
 ├── backups/
@@ -173,6 +175,8 @@
 备份当前 config.toml
 ↓
 复制 gpt.toml → ~/.codex/config.toml
+↓
+按 GPT 已验证基线恢复 models.json；旧安装仅清理可确认的 DeepSeek 快照
 ↓
 启动 Codex
 ↓
@@ -201,7 +205,13 @@
 静默结束
 ```
 
-### 5.4 恢复
+### 5.4 安全卸载
+
+卸载必须兼容旧安装本机缺少 `uninstall.sh` 的情况，因此 README 的标准入口先从 GitHub 下载最新卸载脚本再执行。
+
+卸载只清理能够确认属于本项目的 DeepSeek `models.json`；无法确认归属的文件必须保留。当前处于 DeepSeek 时，必须先恢复 GPT Profile，再删除 Switcher。
+
+## 5.5 恢复
 
 任何切换前：
 
@@ -384,6 +394,7 @@ North Star Metric：
 1. 配置快照覆盖用户后来新增的 Codex 配置。
 2. DeepSeek API Key 明文存在本机 Profile。
 3. Codex 更新后配置格式变化。
+4. DeepSeek `models.json` 残留到 GPT，导致 GPT 启动后仍读取第三方模型目录或出现异常。
 
 应对：
 
@@ -392,6 +403,7 @@ North Star Metric：
 - Secret Profile 权限设为 `600`。
 - 不提交该目录到 Git。
 - 用户手工修改 Codex 配置后，需要重新生成 Profile 快照。
+- GPT Profile 同时记录 `models.json` 存在/不存在的已验证基线；旧安装只对与 DeepSeek 快照完全一致的 `models.json` 做自动清理。
 
 ## P1
 

@@ -46,14 +46,17 @@ $HOME/.codex/switcher/
 已安装时运行：
 
 ```zsh
-/bin/zsh "$HOME/.codex/switcher/uninstall.sh"
+/bin/zsh -c 'tmp="$(mktemp -t codex-switcher-uninstall)"; curl -fsSL https://raw.githubusercontent.com/sunJack1991/codex-switcher/main/uninstall.sh -o "$tmp" && /bin/zsh "$tmp"; status=$?; rm -f "$tmp"; exit $status'
 ```
+
+> 这条命令会先下载 **GitHub main 上最新的卸载脚本** 再执行，因此即使本机是旧版本、`$HOME/.codex/switcher/uninstall.sh` 还不存在，也能卸载。若本机已更新，也可以直接运行 `/bin/zsh "$HOME/.codex/switcher/uninstall.sh"`。
 
 卸载脚本会：
 
-- 优先使用本项目保存的 GPT Profile 恢复 GPT 配置；
+- 当前处于 DeepSeek 时，优先使用本项目保存的 GPT Profile 恢复 GPT 配置；
+- 按 GPT 的 `models.json` 基线恢复：恢复 GPT 快照，或在 GPT 基线原本无 `models.json` 时清理 DeepSeek 文件；
+- 旧版本没有 GPT models 基线时，只删除与本项目 DeepSeek 快照逐字节一致的 `models.json`，未知文件一律保留；
 - 删除 `$HOME/.codex/switcher` 整个目录；
-- 删除本项目使用的 DeepSeek `models.json`；
 - 删除本项目 Profile 中保存的 DeepSeek API Key；
 - 保留 `$HOME/.codex/auth.json`；
 - 不删除 Codex / ChatGPT Desktop App；
@@ -95,7 +98,7 @@ $HOME/.codex/switcher/
 
 ## 当前状态
 
-V1.3 代码已就位，待目标 Mac 实机 POC。核心切换逻辑已完成：完整退出 Codex.app、并发锁、原子替换、配置备份轮转、静默成功 / 失败写 stderr。
+V1.3.2 Hotfix 已合并到 main，待目标 Mac 实机 POC。新增 GPT `models.json` 基线恢复与旧版本安全清理，修复 DeepSeek → GPT 后残留 DeepSeek models 的风险；一键卸载改为远程最新脚本入口，兼容本机缺少 `uninstall.sh` 的旧安装。
 
 正常切换完全静默，失败信息写入 stderr。
 
@@ -115,12 +118,14 @@ Shortcut 永远只引用 `$HOME`，不写具体用户名。
 $HOME/.codex/switcher/bin/codex-switcher.sh    # 日常切换
 $HOME/.codex/switcher/bin/test-deepseek.sh     # 首次 DeepSeek API POC
 $HOME/.codex/switcher/setup.sh                 # 本机幂等初始化
-$HOME/.codex/switcher/install.sh               # Git 分发 / 更新\n$HOME/.codex/switcher/bootstrap.sh             # 新 Mac 引导式一键初始化\n$HOME/.codex/switcher/uninstall.sh             # 安全卸载 / 清理
+$HOME/.codex/switcher/install.sh               # Git 分发 / 更新
+$HOME/.codex/switcher/bootstrap.sh             # 新 Mac 引导式一键初始化
+$HOME/.codex/switcher/uninstall.sh             # 安全卸载 / 清理
 ```
 
 ## 首次设置
 
-所有 Profile 保存在 `~/.codex/switcher/profiles/`，不会进入 Git。
+所有 Profile 保存在 `~/.codex/switcher/profiles/`，不会进入 Git。GPT 还会记录 `models.json` 基线：若 GPT 当时存在该文件则保存为 `models.gpt.json`；若不存在则保存 `models.gpt.absent` 标记。
 
 如果仓库尚未 clone 到固定目录，先安装/更新：
 
@@ -171,7 +176,7 @@ API Key 通过 `read -s` 读取，不回显、不写日志、不进 Git。
 2. 获取并发锁，避免 Shortcut 连点竞态。
 3. 完整退出 Codex.app（graceful -> TERM -> KILL -> 确认零残留）。
 4. 备份当前 `config.toml` 到 `~/.codex/switcher/backups/`。
-5. 原子安装目标配置；DeepSeek 的 models 快照先于 config 落盘。
+5. 原子安装目标配置；DeepSeek 使用自己的 models 快照；GPT 按已验证基线恢复 / 清理 models.json。旧安装没有 GPT models 基线时，仅清理与 DeepSeek 快照完全一致的文件。
 6. 保留最近 20 份配置备份。
 7. 重新打开 Codex，静默结束。
 
@@ -207,6 +212,7 @@ state
 ```zsh
 ./tests/test-switcher.zsh
 ./tests/test-setup.zsh
+./tests/test-uninstall.zsh
 ```
 
 测试只使用临时目录，不会退出真实 Codex，也不会读写真实 Profile。

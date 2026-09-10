@@ -32,6 +32,8 @@ readonly CONFIG_PATH="$CODEX_DIR/config.toml"
 readonly MODELS_PATH="$CODEX_DIR/models.json"
 readonly STATE_PATH="$SWITCHER_DIR/state"
 readonly LOCK_DIR="$SWITCHER_DIR/.switch.lock"
+readonly GPT_MODELS_PROFILE_PATH="$PROFILE_DIR/models.gpt.json"
+readonly GPT_MODELS_ABSENT_PATH="$PROFILE_DIR/models.gpt.absent"
 
 # Codex Desktop 实际为 /Applications/ChatGPT.app。用 Contents/(MacOS|Frameworks)
 # 匹配主 GUI 与 framework helpers，避免误杀嵌入的 CLI（Contents/Resources/codex）
@@ -199,12 +201,23 @@ stage_file() {
   print -r -- "$staged"
 }
 
+rollback_config() {
+  local backup_path="$1"
+
+  if /bin/cp -p "$backup_path" "$CONFIG_PATH"; then
+    /bin/chmod 600 "$CONFIG_PATH" >/dev/null 2>&1 || true
+    return 0
+  fi
+  return 1
+}
+
 main() {
   local target
   local target_raw="${1:-}"
   local profile_path
   local models_profile_path="$PROFILE_DIR/models.deepseek.json"
   local backup_path
+  local models_action="none"
 
   [[ $# -eq 1 ]] || {
     usage
@@ -231,9 +244,28 @@ main() {
   require_safe_directory "$PROFILE_DIR" "Profile 目录"
   require_regular_file "$profile_path" "$target Profile"
   require_safe_optional_file "$STATE_PATH" "状态文件"
+  require_safe_optional_file "$MODELS_PATH" "当前 models.json"
+
   if [[ "$target" == "deepseek" ]]; then
     require_regular_file "$models_profile_path" "DeepSeek models 快照"
-    require_safe_optional_file "$MODELS_PATH" "当前 models.json"
+    models_action="restore-deepseek"
+  else
+    if [[ -e "$GPT_MODELS_PROFILE_PATH" || -L "$GPT_MODELS_PROFILE_PATH" ]]; then
+      require_regular_file "$GPT_MODELS_PROFILE_PATH" "GPT models 快照"
+    fi
+    if [[ -e "$GPT_MODELS_ABSENT_PATH" || -L "$GPT_MODELS_ABSENT_PATH" ]]; then
+      require_regular_file "$GPT_MODELS_ABSENT_PATH" "GPT models absent 标记"
+    fi
+    if [[ -f "$GPT_MODELS_PROFILE_PATH" && -f "$GPT_MODELS_ABSENT_PATH" ]]; then
+      fail "GPT models 基线冲突：同时存在 models.gpt.json 与 models.gpt.absent。请重新保存 GPT Profile。"
+    elif [[ -f "$GPT_MODELS_PROFILE_PATH" ]]; then
+      models_action="restore-gpt"
+    elif [[ -f "$GPT_MODELS_ABSENT_PATH" ]]; then
+      models_action="remove-gpt"
+    else
+      require_safe_optional_file "$models_profile_path" "DeepSeek models 快照"
+      models_action="legacy-gpt"
+    fi
   fi
 
   if [[ -e "$BACKUP_DIR" || -L "$BACKUP_DIR" ]]; then
@@ -243,14 +275,16 @@ main() {
   /bin/mkdir -p "$BACKUP_DIR"
   /bin/chmod 700 "$SWITCHER_DIR" "$PROFILE_DIR" "$BACKUP_DIR"
 
-  # 预检后立即拿锁，避免 Shortcut 连续点击产生竞态。
   acquire_lock
 
   config_stage=$(stage_file "$profile_path" "$CODEX_DIR/.config.toml.switch.XXXXXX") || \
     fail "无法暂存 $target Profile，配置未切换。"
-  if [[ "$target" == "deepseek" ]]; then
+  if [[ "$models_action" == "restore-deepseek" ]]; then
     models_stage=$(stage_file "$models_profile_path" "$CODEX_DIR/.models.json.switch.XXXXXX") || \
       fail "无法暂存 DeepSeek models 快照，配置未切换。"
+  elif [[ "$models_action" == "restore-gpt" ]]; then
+    models_stage=$(stage_file "$GPT_MODELS_PROFILE_PATH" "$CODEX_DIR/.models.json.switch.XXXXXX") || \
+      fail "无法暂存 GPT models 快照，配置未切换。"
   fi
   state_stage=$(/usr/bin/mktemp "$SWITCHER_DIR/.state.switch.XXXXXX") || \
     fail "无法暂存状态文件，配置未切换。"
@@ -265,8 +299,7 @@ main() {
   fi
   /bin/chmod 600 "$backup_path"
 
-  # DeepSeek models 先落盘，config.toml 最后原子替换；中断时不会留下引用缺失 models 的配置。
-  if [[ "$target" == "deepseek" ]]; then
+  if [[ "$models_action" == "restore-deepseek" ]]; then
     if ! /bin/mv -f "$models_stage" "$MODELS_PATH"; then
       fail "安装 DeepSeek models 快照失败，原配置未切换。"
     fi
@@ -282,6 +315,41 @@ main() {
   fi
   config_stage=""
 
+  if [[ "$target" == "gpt" ]]; then
+    case "$models_action" in
+      restore-gpt)
+        if ! /bin/mv -f "$models_stage" "$MODELS_PATH"; then
+          if rollback_config "$backup_path"; then
+            fail "恢复 GPT models.json 失败，config.toml 已回滚。"
+          fi
+          fail "恢复 GPT models.json 失败，且 config.toml 回滚失败；请使用备份：$backup_path"
+        fi
+        models_stage=""
+        ;;
+      remove-gpt)
+        if [[ -e "$MODELS_PATH" || -L "$MODELS_PATH" ]]; then
+          if ! /bin/rm -f -- "$MODELS_PATH"; then
+            if rollback_config "$backup_path"; then
+              fail "清理 DeepSeek models.json 失败，config.toml 已回滚。"
+            fi
+            fail "清理 DeepSeek models.json 失败，且 config.toml 回滚失败；请使用备份：$backup_path"
+          fi
+        fi
+        ;;
+      legacy-gpt)
+        if [[ -f "$MODELS_PATH" && -f "$models_profile_path" ]] && \
+           /usr/bin/cmp -s "$MODELS_PATH" "$models_profile_path"; then
+          if ! /bin/rm -f -- "$MODELS_PATH"; then
+            if rollback_config "$backup_path"; then
+              fail "清理可确认的 DeepSeek models.json 失败，config.toml 已回滚。"
+            fi
+            fail "清理 DeepSeek models.json 失败，且 config.toml 回滚失败；请使用备份：$backup_path"
+          fi
+        fi
+        ;;
+    esac
+  fi
+
   if ! /bin/mv -f "$state_stage" "$STATE_PATH"; then
     print -u2 -r -- "codex switcher: 配置已切换，但状态文件写入失败。"
   else
@@ -295,7 +363,6 @@ main() {
       print -u2 -r -- "codex switcher: 配置已切换到 $target，但 Codex 启动失败。"
       exit 1
     fi
-    # 默认打开的是 ChatGPT 聊天页；用深链直达 Codex 页面（新建 Codex 线程）。
     /usr/bin/open "codex://threads/new" >/dev/null 2>&1 || true
   fi
 }

@@ -1,7 +1,7 @@
 # codex-switcher-Technical-Architecture-V1.3
 
-版本：V1.3 增量（含 V1.1）  
-最后更新时间：2026-09-09  
+版本：V1.3.2 Hotfix（基于 V1.3）  
+最后更新时间：2026-09-10  
 状态：代码已落 / 待实机 POC；此前 V1.1 Completed
 
 ---
@@ -171,6 +171,8 @@ codex-switcher/
 │
 ├── profiles/
 │   ├── gpt.toml
+│   ├── models.gpt.json        # GPT 有 models.json 时
+│   ├── models.gpt.absent      # GPT 无 models.json 时（二选一）
 │   ├── deepseek.toml
 │   └── models.deepseek.json
 │
@@ -224,6 +226,9 @@ chmod 600 "$HOME/.codex/switcher/profiles/deepseek.toml"
 
 ```bash
 cp "$HOME/.codex/config.toml"    "$HOME/.codex/switcher/profiles/gpt.toml"
+
+# 若 GPT 当前存在 models.json：保存 models.gpt.json
+# 若不存在：保存 models.gpt.absent 标记
 
 chmod 600 "$HOME/.codex/switcher/profiles/gpt.toml"
 ```
@@ -326,11 +331,15 @@ codex-switcher.sh gpt
 ↓
 检查 gpt.toml
 ↓
+读取 GPT models 基线
+↓
 正常退出 Codex
 ↓
 备份当前 config.toml
 ↓
 复制 gpt.toml
+↓
+恢复 models.gpt.json，或按 models.gpt.absent 删除 DeepSeek models.json
 ↓
 写 state=gpt
 ↓
@@ -339,15 +348,17 @@ codex-switcher.sh gpt
 静默结束
 ```
 
-重要：
+V1.3.2 规则：
 
-> V1 不删除 `~/.codex/models.json`。
+- 新安装必须把 GPT 的 `models.json` **存在/不存在** 都记录为已验证基线。
+- 若存在 `models.gpt.json`，切回 GPT 时恢复该快照。
+- 若存在 `models.gpt.absent`，切回 GPT 时删除当前 `models.json`。
+- 旧安装没有上述基线时，不猜 GPT 默认配置；仅当当前 `models.json` 与 `models.deepseek.json` 逐字节一致时才删除。
+- 无法确认归属的 `models.json` 一律保留。
 
-原因：
+这样同时满足：
 
-- GPT Profile 如果不引用它，它不会参与模型配置。
-- 删除用户文件的风险高于保留一个未使用文件。
-- 避免误删未来由其它功能生成的 `models.json`。
+> GPT 恢复完整性 > 不误删未知用户文件。
 
 ---
 
@@ -580,6 +591,9 @@ V1 解决方法：
 - 最近 20 份备份轮转。
 - 缺少 models 快照时不修改配置。
 - 提交 config 前中断时保留原配置。
+- GPT models 快照 / absent 基线捕获与恢复。
+- 旧安装 DeepSeek models 安全清理。
+- 安全卸载保留未知 models.json 与 auth.json。
 - Profile 捕获与 700 / 600 权限。
 
 真实端到端目标仍为：

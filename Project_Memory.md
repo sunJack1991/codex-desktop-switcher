@@ -29,7 +29,7 @@
 
 当前版本：
 
-> V1.3 代码已就位 / 待目标 Mac 实机 POC
+> V1.3.2 Hotfix 已合并 / 待目标 Mac 实机 POC
 
 已完成：
 
@@ -42,7 +42,7 @@
 - 已实现 `install.sh`：固定根目录 `$HOME/.codex/switcher` 的 Git 分发/更新。
 - 已实现 `setup.sh`：install / save-deepseek / save-gpt / check。
 - 已更新 README、AGENTS、Change_Log、.gitignore，统一命名为 `codex-switcher`。
-- 临时目录自动测试全部通过（静默、可见错误、双向、20 次、轮转、预检、中断安全、安装/捕获）。
+- 临时目录自动测试基线已覆盖静默、可见错误、双向、20 次、轮转、预检、中断安全、安装/捕获；V1.3.2 新增 GPT models 基线与卸载回归测试，待目标 Mac 执行。
 
 待实机 POC：
 
@@ -54,6 +54,26 @@
 ---
 
 # 3. 关键决策记录
+
+## Decision 011 — GPT models.json 必须按已验证基线恢复
+
+日期：2026-09-10
+
+问题：
+
+> DeepSeek 会写入 `~/.codex/models.json`。旧版切回 GPT 只恢复 `config.toml`，可能留下 DeepSeek models；同时旧卸载逻辑存在误删未知 `models.json` 的风险。
+
+决策：
+
+- `save-gpt` 同时记录 GPT 的 models 基线：存在则保存 `models.gpt.json`，不存在则保存 `models.gpt.absent`。
+- 切回 GPT 时按该已验证基线恢复。
+- 对 V1.3.1 及更早的旧安装，不猜 GPT 默认状态；仅当当前 `models.json` 与 `models.deepseek.json` 完全一致时自动清理。
+- 卸载仅修改可确认属于 Switcher 的 models；未知文件保留。
+- README 的标准卸载入口下载 GitHub main 最新 `uninstall.sh`，解决旧本机没有该文件导致的一键卸载失败。
+
+状态：
+
+> 代码已合并，目标 Mac 实机 POC 未验证。
 
 ## Decision 010 — 安装/卸载入口统一为固定路径
 
@@ -375,7 +395,7 @@ V1 处理：
 
 当前：
 
-> V1.3 代码已落 / 待目标 Mac 实机 POC。
+> V1.3.2 Hotfix 已合并 / 待目标 Mac 实机 POC。
 
 待实机 POC：
 

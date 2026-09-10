@@ -13,6 +13,8 @@ readonly SWITCHER_DIR="$CODEX_DIR/switcher"
 readonly PROFILE_DIR="$SWITCHER_DIR/profiles"
 readonly BACKUP_DIR="$SWITCHER_DIR/backups"
 readonly BIN_DIR="$SWITCHER_DIR/bin"
+readonly GPT_MODELS_PROFILE_PATH="$PROFILE_DIR/models.gpt.json"
+readonly GPT_MODELS_ABSENT_PATH="$PROFILE_DIR/models.gpt.absent"
 
 usage() {
   print -u2 -r -- "Usage:"
@@ -34,6 +36,15 @@ require_regular_file() {
 
   [[ -f "$path" && ! -L "$path" ]] || fail "$label 不存在或不是普通文件：$path"
   [[ -r "$path" ]] || fail "$label 不可读：$path"
+}
+
+require_safe_optional_file() {
+  local path="$1"
+  local label="$2"
+
+  if [[ -e "$path" || -L "$path" ]]; then
+    [[ -f "$path" && ! -L "$path" ]] || fail "$label 不是安全的普通文件：$path"
+  fi
 }
 
 prepare_directories() {
@@ -64,6 +75,26 @@ atomic_copy_private() {
     /bin/rm -f -- "$staged"
     fail "复制失败：$destination"
   fi
+  /bin/chmod 600 "$staged" || {
+    /bin/rm -f -- "$staged"
+    fail "无法设置私有文件权限：$destination"
+  }
+  /bin/mv -f "$staged" "$destination" || {
+    /bin/rm -f -- "$staged"
+    fail "无法安装文件：$destination"
+  }
+}
+
+write_private_marker() {
+  local destination="$1"
+  local staged
+
+  if [[ -e "$destination" || -L "$destination" ]]; then
+    [[ -f "$destination" && ! -L "$destination" ]] || \
+      fail "拒绝覆盖非普通文件或符号链接：$destination"
+  fi
+  staged=$(/usr/bin/mktemp "${destination}.new.XXXXXX") || fail "无法创建临时文件：$destination"
+  print -r -- "absent" > "$staged"
   /bin/chmod 600 "$staged" || {
     /bin/rm -f -- "$staged"
     fail "无法设置私有文件权限：$destination"
@@ -159,10 +190,22 @@ save_gpt() {
   [[ "${1:-}" == "--confirmed-working" ]] || \
     fail "仅在 GPT 已实际验证可用后执行，并传入 --confirmed-working。"
   require_regular_file "$CONFIG_PATH" "当前 Codex 配置"
+  require_safe_optional_file "$MODELS_PATH" "当前 GPT models.json"
   prepare_directories
   backup_existing_profile "$PROFILE_DIR/gpt.toml" "gpt"
+  backup_existing_profile "$GPT_MODELS_PROFILE_PATH" "models_gpt"
+  backup_existing_profile "$GPT_MODELS_ABSENT_PATH" "models_gpt_absent"
   atomic_copy_private "$CONFIG_PATH" "$PROFILE_DIR/gpt.toml"
-  print -r -- "已保存经人工确认的 GPT Profile。"
+
+  if [[ -f "$MODELS_PATH" ]]; then
+    atomic_copy_private "$MODELS_PATH" "$GPT_MODELS_PROFILE_PATH"
+    /bin/rm -f -- "$GPT_MODELS_ABSENT_PATH"
+    print -r -- "已保存经人工确认的 GPT Profile（含 models.json 基线）。"
+  else
+    /bin/rm -f -- "$GPT_MODELS_PROFILE_PATH"
+    write_private_marker "$GPT_MODELS_ABSENT_PATH"
+    print -r -- "已保存经人工确认的 GPT Profile（GPT 基线无 models.json）。"
+  fi
 }
 
 check_path() {
@@ -176,9 +219,22 @@ check_path() {
   fi
 }
 
+check_gpt_models_baseline() {
+  if [[ -f "$GPT_MODELS_PROFILE_PATH" && -f "$GPT_MODELS_ABSENT_PATH" ]]; then
+    print -r -- "MISSING GPT models 基线（models.gpt.json 与 models.gpt.absent 冲突）"
+  elif [[ -f "$GPT_MODELS_PROFILE_PATH" ]]; then
+    print -r -- "OK      GPT models 基线（快照）"
+  elif [[ -f "$GPT_MODELS_ABSENT_PATH" ]]; then
+    print -r -- "OK      GPT models 基线（无 models.json）"
+  else
+    print -r -- "LEGACY  GPT models 基线未记录；首次切回 GPT 将仅清理可确认的 DeepSeek models.json"
+  fi
+}
+
 check_setup() {
   check_path "$CONFIG_PATH" "当前 config.toml"
   check_path "$PROFILE_DIR/gpt.toml" "GPT Profile"
+  check_gpt_models_baseline
   check_path "$PROFILE_DIR/deepseek.toml" "DeepSeek Profile"
   check_path "$PROFILE_DIR/models.deepseek.json" "DeepSeek models 快照"
   check_path "$BIN_DIR/codex-switcher.sh" "已安装的切换脚本"

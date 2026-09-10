@@ -30,17 +30,27 @@ run_setup install
 run_setup save-deepseek --confirmed-working
 run_setup init-deepseek
 
+/bin/rm -f -- "$TEST_CODEX_DIR/models.json"
 print -r -- 'provider = "gpt"' > "$TEST_CODEX_DIR/config.toml"
 run_setup save-gpt --confirmed-working
 
 /usr/bin/cmp -s "$TEST_CODEX_DIR/switcher/profiles/gpt.toml" "$TEST_CODEX_DIR/config.toml" || \
   fail "GPT Profile 捕获错误"
+[[ -f "$TEST_CODEX_DIR/switcher/profiles/models.gpt.absent" ]] || fail "GPT 无 models.json 基线未记录 absent 标记"
+[[ ! -e "$TEST_CODEX_DIR/switcher/profiles/models.gpt.json" ]] || fail "GPT 无 models.json 时不应保留 models.gpt.json"
+
+print -r -- '{"models":["gpt-custom"]}' > "$TEST_CODEX_DIR/models.json"
+run_setup save-gpt --confirmed-working
+/usr/bin/cmp -s "$TEST_CODEX_DIR/switcher/profiles/models.gpt.json" "$TEST_CODEX_DIR/models.json" || \
+  fail "GPT models.json 快照捕获错误"
+[[ ! -e "$TEST_CODEX_DIR/switcher/profiles/models.gpt.absent" ]] || fail "GPT models.json 存在时应移除 absent 标记"
 [[ -x "$TEST_CODEX_DIR/switcher/bin/codex-switcher.sh" ]] || fail "安装后的脚本不可执行"
 
 for private_path in \
   "$TEST_CODEX_DIR/switcher/profiles/gpt.toml" \
   "$TEST_CODEX_DIR/switcher/profiles/deepseek.toml" \
-  "$TEST_CODEX_DIR/switcher/profiles/models.deepseek.json"; do
+  "$TEST_CODEX_DIR/switcher/profiles/models.deepseek.json" \
+  "$TEST_CODEX_DIR/switcher/profiles/models.gpt.json"; do
   mode=$(/usr/bin/stat -f '%Lp' "$private_path")
   [[ "$mode" == "600" ]] || fail "$private_path 权限应为 600，实际为 $mode"
 done
@@ -49,4 +59,4 @@ if /usr/bin/env HOME="$TEST_HOME" "$SETUP" save-gpt >/dev/null 2>&1; then
   fail "未确认可用时不应保存 GPT Profile"
 fi
 
-print -r -- "PASS: 安装、Profile 捕获、权限和人工确认保护均通过。"
+print -r -- "PASS: 安装、GPT models 基线捕获、Profile 捕获、权限和人工确认保护均通过。"

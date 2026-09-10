@@ -59,7 +59,10 @@ assert_file_equals "${initial_backups[1]}" "$TEST_ROOT/expected-initial-config.t
 
 run_switch gpt
 assert_file_equals "$TEST_CODEX_DIR/config.toml" "$PROFILE_DIR/gpt.toml" "GPT 配置未正确安装"
+[[ ! -e "$TEST_CODEX_DIR/models.json" ]] || fail "Legacy GPT 切回时应清理与 DeepSeek 快照完全一致的 models.json"
 [[ "$(<"$TEST_CODEX_DIR/switcher/state")" == "gpt" ]] || fail "GPT 状态错误"
+print -r -- "absent" > "$PROFILE_DIR/models.gpt.absent"
+/bin/chmod 600 "$PROFILE_DIR/models.gpt.absent"
 
 for iteration in {1..20}; do
   if (( iteration % 2 == 1 )); then
@@ -82,6 +85,7 @@ after_hash=$(/usr/bin/shasum -a 256 "$TEST_CODEX_DIR/config.toml")
 [[ "$before_hash" == "$after_hash" ]] || fail "预检失败后 config.toml 被修改"
 /bin/mv "$PROFILE_DIR/models.deepseek.json.hidden" "$PROFILE_DIR/models.deepseek.json"
 
+run_switch deepseek
 /bin/mv "$TEST_CODEX_DIR/models.json" "$TEST_CODEX_DIR/models.json.saved"
 /bin/mkdir "$TEST_CODEX_DIR/models.json"
 before_hash=$(/usr/bin/shasum -a 256 "$TEST_CODEX_DIR/config.toml")
@@ -103,10 +107,19 @@ if /usr/bin/env \
 fi
 assert_file_equals "$TEST_CODEX_DIR/config.toml" "$PROFILE_DIR/gpt.toml" "模拟中断后当前配置不安全"
 
+/bin/rm -f -- "$PROFILE_DIR/models.gpt.absent"
+print -r -- '{"models":["gpt-custom"]}' > "$PROFILE_DIR/models.gpt.json"
+/bin/chmod 600 "$PROFILE_DIR/models.gpt.json"
+run_switch gpt
+assert_file_equals "$TEST_CODEX_DIR/models.json" "$PROFILE_DIR/models.gpt.json" "GPT models 快照未正确恢复"
+run_switch deepseek
+run_switch gpt
+assert_file_equals "$TEST_CODEX_DIR/models.json" "$PROFILE_DIR/models.gpt.json" "GPT models 快照双向切换后未保持"
+
 config_mode=$(/usr/bin/stat -f '%Lp' "$TEST_CODEX_DIR/config.toml")
 [[ "$config_mode" == "600" ]] || fail "config.toml 权限应为 600，实际为 $config_mode"
 
 auth_json_after_all=$(/usr/bin/shasum -a 256 "$TEST_CODEX_DIR/auth.json")
 [[ "$auth_json_before" == "$auth_json_after_all" ]] || fail "多次切换 / 中断路径后 auth.json 被修改"
 
-print -r -- "PASS: 静默成功、可见错误、双向切换、20 次连续切换、备份轮转、预检保护和中断安全均通过。"
+print -r -- "PASS: 静默成功、可见错误、GPT models 基线恢复、Legacy 清理、双向切换、20 次连续切换、备份轮转、预检保护和中断安全均通过。"
