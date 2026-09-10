@@ -24,12 +24,12 @@
 
 2. 初始化 codex-switcher。
 3. 保存当前已确认可用的 GPT Profile。
-4. 调用 **DeepSeek 官方 Codex setup** 完成 DeepSeek 模型接入；若发现上次失败留下的 `backup-deepseek` 状态，会先安全恢复或隔离旧备份。
-5. 提示选择 DeepSeek 模型并输入 API Key。
+4. 强制刷新并校验 **DeepSeek 官方 Codex setup**；只有检测到 Flash / Pro / Vision 三个模型版本才继续。若发现上次失败留下的 `backup-deepseek` 状态，会先安全恢复或隔离旧备份。
+5. 提示选择 DeepSeek 模型（1=Flash、2=Pro、3=Vision）并输入 API Key。
 6. 检查 `config.toml` / `models.json` 和本地 Profile。
 7. 在安装、DeepSeek 接入、Profile 保存及最终初始化成功时分别输出 `✅` 提示。
 
-> DeepSeek 官方 setup 仍然需要首次人工选择模型并输入 API Key。脚本不会把 API Key 写入 Git。若检测到旧 `backup-deepseek` 与当前 GPT 状态冲突，旧备份不会被直接删除，而是改名保留为 `~/.codex/backup-deepseek.stale-时间戳`。
+> DeepSeek 官方 setup 仍然需要首次人工选择模型并输入 API Key。当前官方文档列出三个 Codex 模型：`deepseek-v4-flash`、`deepseek-v4-pro`、`deepseek-v4-flash-vision-exp`。bootstrap 会绕过缓存重新下载，并在执行前验证 Vision 模型标识；缺少第三个模型时直接停止，不再让用户误装旧脚本。若检测到旧 `backup-deepseek` 与当前 GPT 状态冲突，旧备份不会被直接删除，而是改名保留为 `~/.codex/backup-deepseek.stale-时间戳`。
 
 安装成功后，本机固定使用：
 
@@ -98,7 +98,7 @@ $HOME/.codex/switcher/
 
 ## 当前状态
 
-V1.3.3 Hotfix 已合并到 main，待目标 Mac 实机 POC。除 V1.3.2 的 GPT models 恢复外，进一步修复一键初始化在残留 `~/.codex/backup-deepseek` + 缺失 `models.json` 时被 DeepSeek 官方脚本中止的问题，并修复失败清理时的 `temp_script: parameter not set`。
+V1.3.4 Hotfix 已合并到 main，待目标 Mac 实机 POC。新增 DeepSeek 官方 setup 的强制刷新与三模型校验，确保一键初始化只能继续执行包含 `deepseek-v4-flash`、`deepseek-v4-pro`、`deepseek-v4-flash-vision-exp` 的当前版本，避免 CDN/本地缓存返回旧的两模型脚本。
 
 正常切换完全静默，失败信息写入 stderr。
 

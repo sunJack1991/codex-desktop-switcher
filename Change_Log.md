@@ -6,6 +6,28 @@
 
 # Version History
 
+# V1.3.4 — Force Latest DeepSeek 3-Model Setup
+
+日期：2026-09-10  
+状态：已合并 main，待目标 Mac 实机验证
+
+- 修复一键初始化偶尔只显示两个 DeepSeek 模型的问题。
+- 根因：bootstrap 使用固定 CDN URL 下载官方 setup，可能拿到旧缓存版本；而 DeepSeek 当前官方文档已经明确提供三个 Codex 模型：Flash、Pro、Flash Vision Experimental。
+- 下载官方 setup 时增加时间戳 query + `Cache-Control: no-cache` / `Pragma: no-cache`，强制刷新缓存。
+- 执行官方脚本前必须检测 `deepseek-v4-flash-vision-exp`；若缺失则停止，不允许继续执行旧的两模型脚本。
+- 成功校验后输出 `✅ 已获取 DeepSeek 官方三模型 setup：Flash / Pro / Vision`。
+- 不自行维护 DeepSeek 模型菜单，不复制官方模型配置，仍以 DeepSeek 官方 setup 为唯一来源。
+
+## 待实机 POC
+
+- 在出现“两模型菜单”的 Mac 上重新运行 README 顶部一键初始化。
+- 菜单应显示：1 Flash、2 Pro、3 Flash Vision Experimental、9 Restore。
+- 验证选择 3 后能生成包含 Vision 模型的官方 `models.json`。
+- 验证缓存异常时 bootstrap 会中止，而不是降级成两模型安装。
+
+---
+
+
 # V1.3.3 — Bootstrap Stale DeepSeek State Recovery
 
 日期：2026-09-10  

@@ -29,7 +29,7 @@
 
 当前版本：
 
-> V1.3.3 Hotfix 已合并 / 待目标 Mac 实机 POC
+> V1.3.4 Hotfix 已合并 / 待目标 Mac 实机 POC
 
 已完成：
 
@@ -54,6 +54,27 @@
 ---
 
 # 3. 关键决策记录
+
+## Decision 013 — DeepSeek 模型菜单必须来自官方最新脚本并做能力校验
+
+日期：2026-09-10
+
+问题：
+
+> DeepSeek 官方当前 Codex 文档已有三个模型，但固定 CDN URL 在一键初始化中可能返回旧的两模型 setup，导致 bootstrap 与“直接运行官方首次安装”体验不一致。
+
+决策：
+
+- 不在 codex-switcher 内手写第三个模型，也不 fork DeepSeek 官方 setup。
+- 每次首次 DeepSeek 初始化都对官方 CDN URL 加 cache-buster，并发送 no-cache 请求头。
+- 下载后以 `deepseek-v4-flash-vision-exp` 作为“当前三模型版”的最小能力标记。
+- 校验失败直接停止，避免静默降级到旧的两模型版本。
+- 仍然由 DeepSeek 官方脚本负责 API Key、models.json、config.toml 和菜单逻辑。
+
+状态：
+
+> 代码已合并；目标 Mac 三模型菜单实机 POC 待验证。
+
 
 ## Decision 012 — DeepSeek 官方 backup-deepseek 视为外部状态机，不直接删除
 
@@ -416,7 +437,7 @@ V1 处理：
 
 当前：
 
-> V1.3.3 Hotfix 已合并 / 待目标 Mac 实机 POC。
+> V1.3.4 Hotfix 已合并 / 待目标 Mac 实机 POC。
 
 待实机 POC：
 

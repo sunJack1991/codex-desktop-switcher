@@ -9,6 +9,7 @@ readonly CONFIG_PATH="$CODEX_DIR/config.toml"
 readonly MODELS_PATH="$CODEX_DIR/models.json"
 readonly OFFICIAL_BACKUP_DIR="$CODEX_DIR/backup-deepseek"
 readonly DEEPSEEK_SETUP_URL="https://cdn.deepseek.com/api-docs/codex-deepseek-setup-en.sh"
+readonly REQUIRED_VISION_MODEL="deepseek-v4-flash-vision-exp"
 
 temp_script=""
 
@@ -61,6 +62,31 @@ cleanup_temp_script() {
 
 clear_temp_traps() {
   trap - EXIT HUP INT TERM
+}
+
+download_latest_deepseek_setup() {
+  local cache_buster
+  local download_url
+
+  cache_buster=$(/bin/date +%s)
+  download_url="${DEEPSEEK_SETUP_URL}?codex-switcher=${cache_buster}"
+
+  info "下载 DeepSeek 官方最新 setup（强制绕过 CDN/本地缓存）…"
+  if ! /usr/bin/curl -fsSL \
+      -H "Cache-Control: no-cache" \
+      -H "Pragma: no-cache" \
+      "$download_url" -o "$temp_script"; then
+    return 1
+  fi
+
+  if ! /usr/bin/grep -Fq "$REQUIRED_VISION_MODEL" "$temp_script"; then
+    print -u2 -r -- "❌ 下载到的 DeepSeek 官方 setup 不是当前三模型版本。"
+    print -u2 -r -- "缺少模型：$REQUIRED_VISION_MODEL"
+    print -u2 -r -- "为避免继续使用旧版缓存脚本，本次初始化停止。"
+    return 2
+  fi
+
+  ok "已获取 DeepSeek 官方三模型 setup：Flash / Pro / Vision"
 }
 
 next_stale_backup_path() {
@@ -176,12 +202,11 @@ run_deepseek_official_setup() {
   print
   print -r -- "接下来启动 DeepSeek 官方 Codex setup。"
   print -r -- "需要人工选择模型并粘贴 DeepSeek API Key；这是首次安装唯一的交互步骤。"
-  info "下载 DeepSeek 官方 setup…"
 
-  if ! /usr/bin/curl -fsSL "$DEEPSEEK_SETUP_URL" -o "$temp_script"; then
+  if ! download_latest_deepseek_setup; then
     cleanup_temp_script
     clear_temp_traps
-    die "DeepSeek 官方 setup 下载失败。"
+    die "DeepSeek 官方 setup 下载或版本校验失败。"
   fi
 
   prepare_deepseek_official_state "$temp_script"

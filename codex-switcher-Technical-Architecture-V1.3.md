@@ -1,6 +1,6 @@
 # codex-switcher-Technical-Architecture-V1.3
 
-版本：V1.3.3 Hotfix（基于 V1.3）  
+版本：V1.3.4 Hotfix（基于 V1.3）  
 最后更新时间：2026-09-10  
 状态：代码已落 / 待实机 POC；此前 V1.1 Completed
 
@@ -239,7 +239,38 @@ chmod 600 "$HOME/.codex/switcher/profiles/gpt.toml"
 
 ---
 
-## 7.3 DeepSeek 官方状态预检
+## 7.3 DeepSeek 官方 setup 新鲜度与能力校验
+
+V1.3.4 不再直接信任固定 CDN URL 返回的一定是最新脚本。下载规则：
+
+```text
+官方固定 URL
+↓
+追加时间戳 cache-buster
+↓
+Cache-Control: no-cache
+Pragma: no-cache
+↓
+下载临时 setup
+↓
+grep 校验 deepseek-v4-flash-vision-exp
+↓
+存在 → 允许执行
+缺失 → 立即停止
+```
+
+当前最低能力断言：
+
+> 官方 setup 必须包含 `deepseek-v4-flash-vision-exp`，对应当前官方的第三个 Vision Experimental 模型。
+
+原则：
+
+- 不在 Switcher 中复制/重写官方模型菜单。
+- 不自行生成 Vision 模型配置。
+- 不把“两模型旧脚本”当作可接受降级路径。
+- DeepSeek 官方 setup 仍是配置事实源，Switcher 只保证拿到当前能力版本。
+
+## 7.4 DeepSeek 官方状态预检
 
 DeepSeek 官方 setup 自身维护：
 
@@ -619,6 +650,7 @@ V1 解决方法：
 - GPT models 快照 / absent 基线捕获与恢复。
 - 旧安装 DeepSeek models 安全清理。
 - 安全卸载保留未知 models.json 与 auth.json。
+- bootstrap 对 DeepSeek 官方 setup 强制刷新并校验三模型能力，不允许旧两模型脚本继续执行。
 - bootstrap 对 DeepSeek 官方 stale backup 状态进行 Restore/归档，不直接删除。
 - bootstrap 失败退出时临时脚本 cleanup 不产生二次 `parameter not set`。
 - Profile 捕获与 700 / 600 权限。
