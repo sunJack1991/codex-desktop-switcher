@@ -1,6 +1,6 @@
 # codex-switcher-Technical-Architecture-V1.3
 
-版本：V1.3.5 Hotfix（基于 V1.3）  
+版本：V1.3.6 Hotfix（基于 V1.3）  
 最后更新时间：2026-09-10  
 状态：代码已落 / 待实机 POC；此前 V1.1 Completed
 
@@ -241,38 +241,40 @@ chmod 600 "$HOME/.codex/switcher/profiles/gpt.toml"
 
 ## 7.3 DeepSeek 官方 setup 来源与能力校验
 
-V1.3.5 基于实机证据撤销 V1.3.4 的 cache-buster 方案。版本正确性不再由 URL query 或缓存请求头推断，而由脚本实际能力判断。
+V1.3.6 的原则是与 DeepSeek 官方当前 Codex 安装命令完全同源。
 
-下载顺序：
+唯一下载 URL：
 
 ```text
-官方原始 URL 1：
-codex-deepseek-setup.sh
-↓
-grep deepseek-v4-flash-vision-exp
-├─ 有 → 使用
-└─ 无 → 尝试官方原始 URL 2
+https://cdn.deepseek.com/api-docs/codex-deepseek-setup-en.sh
+```
 
-官方原始 URL 2：
-codex-deepseek-setup-en.sh
+流程：
+
+```text
+官方原始 URL
+↓
+curl -fsSL（不加 query/header）
+↓
+保存到临时文件
 ↓
 grep deepseek-v4-flash-vision-exp
-├─ 有 → 使用
-└─ 无 → 安全停止
+├─ 有 → 执行同一文件
+└─ 无 → 安全停止，并提示直接运行官方命令做 A/B 对照
 ```
 
 当前最低能力断言：
 
-> 被执行的官方 setup 必须包含 `deepseek-v4-flash-vision-exp`，因为 DeepSeek 当前官方 Codex 文档明确列出 Flash / Pro / Vision 三个模型。
+> 被执行的官方 setup 必须包含 `deepseek-v4-flash-vision-exp`，因为 DeepSeek 当前官方 Codex 文档明确列出 1=Flash、2=Pro、3=Vision、9=Restore。
 
 原则：
 
 - 不追加 cache-buster query。
-- 不使用“缓存绕过成功”替代能力校验。
+- 不添加自定义缓存请求头。
+- 不猜测或尝试未由当前官方文档明确给出的备用 shell endpoint。
 - 不在 Switcher 中复制、patch 或重写 DeepSeek 官方模型菜单。
 - 不自行生成 Vision 模型配置。
-- 两个官方资产都不满足时宁可停止，也不接受两模型静默降级。
-- DeepSeek 官方 setup 仍是配置事实源；Switcher 只负责选择满足当前文档能力的官方资产。
+- 如果同一机器上的官方命令和 bootstrap 结果不一致，后续诊断必须比较实际响应/哈希，而不是继续猜 CDN 行为。
 
 ## 7.4 DeepSeek 官方状态预检
 
@@ -654,7 +656,7 @@ V1 解决方法：
 - GPT models 快照 / absent 基线捕获与恢复。
 - 旧安装 DeepSeek models 安全清理。
 - 安全卸载保留未知 models.json 与 auth.json。
-- bootstrap 依次校验两个 DeepSeek 官方原始 shell 资产的三模型能力，不允许旧两模型脚本继续执行。
+- bootstrap 严格使用 DeepSeek 官方文档当前给出的 `codex-deepseek-setup-en.sh`，不允许旧两模型脚本继续执行。
 - README zsh wrapper 使用 `rc` 保存退出码，避免只读 `status` 变量。
 - bootstrap 对 DeepSeek 官方 stale backup 状态进行 Restore/归档，不直接删除。
 - bootstrap 失败退出时临时脚本 cleanup 不产生二次 `parameter not set`。

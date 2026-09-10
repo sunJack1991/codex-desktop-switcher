@@ -29,7 +29,7 @@
 
 当前版本：
 
-> V1.3.5 Hotfix 已合并 / 待目标 Mac 实机 POC
+> V1.3.6 Hotfix 已合并 / 待目标 Mac 实机 POC
 
 已完成：
 
@@ -54,6 +54,27 @@
 ---
 
 # 3. 关键决策记录
+
+## Decision 015 — Bootstrap 必须与 DeepSeek 官方当前安装 URL 完全对齐
+
+日期：2026-09-10
+
+实机反馈：
+
+> V1.3.4 使用 cache-buster 后仍拿到两模型脚本；V1.3.5 又引入了未由官方文档确认的备用 shell 地址。当前官方 Codex 文档明确给出的 macOS/Linux 安装入口只有 `codex-deepseek-setup-en.sh`，且页面明确声明菜单包含 Flash / Pro / Vision 三个模型。
+
+决策：
+
+- Bootstrap 只使用官方文档当前明确给出的 `codex-deepseek-setup-en.sh`。
+- 不修改 URL，不追加 query/header，不猜备用 endpoint。
+- 下载文件仅做 Vision 能力断言，不自行 patch 官方脚本。
+- 如果同机官方命令与 bootstrap 得到不同结果，下一步必须比较实际响应/哈希，不再通过假设服务端缓存来继续改代码。
+- zsh wrapper 退出码统一使用 `rc`，禁止 `status`。
+
+状态：
+
+> 代码已合并；目标 Mac A/B 实机 POC 待验证。
+
 
 ## Decision 014 — 不把 CDN cache-buster 当作版本正确性保证
 
@@ -462,7 +483,7 @@ V1 处理：
 
 当前：
 
-> V1.3.5 Hotfix 已合并 / 待目标 Mac 实机 POC。
+> V1.3.6 Hotfix 已合并 / 待目标 Mac 实机 POC。
 
 待实机 POC：
 

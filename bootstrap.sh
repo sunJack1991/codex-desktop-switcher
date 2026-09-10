@@ -8,8 +8,7 @@ readonly CODEX_DIR="$HOME/.codex"
 readonly CONFIG_PATH="$CODEX_DIR/config.toml"
 readonly MODELS_PATH="$CODEX_DIR/models.json"
 readonly OFFICIAL_BACKUP_DIR="$CODEX_DIR/backup-deepseek"
-readonly DEEPSEEK_SETUP_URL="https://cdn.deepseek.com/api-docs/codex-deepseek-setup.sh"
-readonly DEEPSEEK_SETUP_URL_EN="https://cdn.deepseek.com/api-docs/codex-deepseek-setup-en.sh"
+readonly DEEPSEEK_SETUP_URL="https://cdn.deepseek.com/api-docs/codex-deepseek-setup-en.sh"
 readonly REQUIRED_VISION_MODEL="deepseek-v4-flash-vision-exp"
 
 temp_script=""
@@ -66,35 +65,23 @@ clear_temp_traps() {
 }
 
 download_current_deepseek_setup() {
-  local setup_url
-  local downloaded=0
-  local candidate_urls=(
-    "$DEEPSEEK_SETUP_URL"
-    "$DEEPSEEK_SETUP_URL_EN"
-  )
+  info "按 DeepSeek 官方文档原始 URL 下载 Codex setup…"
 
-  info "按 DeepSeek 官方原始 URL 下载 Codex setup…"
-
-  for setup_url in "${candidate_urls[@]}"; do
-    if /usr/bin/curl -fsSL "$setup_url" -o "$temp_script"; then
-      downloaded=1
-      if /usr/bin/grep -Fq "$REQUIRED_VISION_MODEL" "$temp_script"; then
-        ok "已获取 DeepSeek 官方三模型 setup：Flash / Pro / Vision"
-        info "使用官方脚本：$setup_url"
-        return 0
-      fi
-      print -u2 -r -- "⚠️ 官方地址当前返回的脚本未包含 Vision 模型，尝试另一个官方脚本地址：$setup_url"
-    else
-      print -u2 -r -- "⚠️ DeepSeek 官方脚本下载失败，尝试下一个地址：$setup_url"
-    fi
-  done
-
-  print -u2 -r -- "❌ 未获取到包含 $REQUIRED_VISION_MODEL 的 DeepSeek 官方 setup。"
-  if (( downloaded == 1 )); then
-    print -u2 -r -- "DeepSeek 官方文档当前列出三个模型，但本机从官方 CDN 下载到的脚本版本不一致。"
+  if ! /usr/bin/curl -fsSL "$DEEPSEEK_SETUP_URL" -o "$temp_script"; then
+    print -u2 -r -- "❌ DeepSeek 官方 setup 下载失败：$DEEPSEEK_SETUP_URL"
+    return 1
   fi
-  print -u2 -r -- "为避免自行拼接官方模型配置，本次初始化停止；不会修改 DeepSeek 配置。"
-  return 1
+
+  if ! /usr/bin/grep -Fq "$REQUIRED_VISION_MODEL" "$temp_script"; then
+    print -u2 -r -- "❌ DeepSeek 官方文档当前声明三模型，但本机从官方原始 URL 下载到的脚本未包含 Vision。"
+    print -u2 -r -- "缺少模型：$REQUIRED_VISION_MODEL"
+    print -u2 -r -- "为避免自行 patch 官方脚本，本次初始化停止；不会修改 DeepSeek 配置。"
+    print -u2 -r -- "你可以直接运行官方命令对照：bash <(curl -fsSL $DEEPSEEK_SETUP_URL)"
+    return 2
+  fi
+
+  ok "已获取 DeepSeek 官方三模型 setup：Flash / Pro / Vision"
+  info "官方脚本：$DEEPSEEK_SETUP_URL"
 }
 
 next_stale_backup_path() {

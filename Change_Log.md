@@ -6,6 +6,28 @@
 
 # Version History
 
+# V1.3.6 — Exact Official DeepSeek Setup URL
+
+日期：2026-09-10  
+状态：已合并 main，待目标 Mac 实机验证
+
+- 撤销 V1.3.5 中未经官方文档确认的备用 `codex-deepseek-setup.sh` 地址。
+- bootstrap 现在严格使用 DeepSeek 官方 Codex 文档给出的 `https://cdn.deepseek.com/api-docs/codex-deepseek-setup-en.sh`。
+- 与官方安装命令保持同一 URL：不加 query、不加 `Cache-Control` / `Pragma`、不切换猜测的备用脚本。
+- 下载后仍校验 `deepseek-v4-flash-vision-exp`，因为官方当前菜单明确包含 1=Flash、2=Pro、3=Vision、9=Restore。
+- 如果官方原始 URL 在本机仍返回两模型脚本，bootstrap 明确停止并打印可直接对照的官方命令，不再做服务端缓存机制猜测。
+- 保留 V1.3.5 修复：README 一键初始化 / 卸载外层 zsh 退出码变量统一用 `rc`，不再使用只读 `status`。
+
+## 待实机 POC
+
+- 在同一台 Mac 上先重新执行 README 一键初始化。
+- 正常应输出“已获取 DeepSeek 官方三模型 setup：Flash / Pro / Vision”。
+- 随后菜单应出现 1 / 2 / 3 / 9。
+- 若仍失败，立即执行报错中给出的官方命令进行 A/B 对照；若官方命令显示 3 而 bootstrap 仍失败，再采集两次下载文件哈希/响应头做下一步定位。
+
+---
+
+
 # V1.3.5 — Official URL Fallback / zsh Wrapper Fix
 
 日期：2026-09-10  
