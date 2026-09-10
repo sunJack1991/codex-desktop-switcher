@@ -29,7 +29,7 @@
 
 当前版本：
 
-> V1.3.4 Hotfix 已合并 / 待目标 Mac 实机 POC
+> V1.3.5 Hotfix 已合并 / 待目标 Mac 实机 POC
 
 已完成：
 
@@ -54,6 +54,31 @@
 ---
 
 # 3. 关键决策记录
+
+## Decision 014 — 不把 CDN cache-buster 当作版本正确性保证
+
+日期：2026-09-10
+
+实机证据：
+
+> V1.3.4 对 `codex-deepseek-setup-en.sh` 增加时间戳 query 与 no-cache 后，仍下载到不含 Vision 的脚本，而 DeepSeek 当前官方文档明确列出三个 Codex 模型。同时 README 外层 zsh 命令暴露 `status` 为只读变量的问题。
+
+决策：
+
+- 撤销“强制绕过缓存即可得到最新脚本”的假设。
+- 使用 DeepSeek 官方原始 CDN URL，不追加 query。
+- 尝试 `codex-deepseek-setup.sh` 和 `codex-deepseek-setup-en.sh` 两个官方 shell 资产，以 Vision 模型标识做能力检测。
+- 只运行满足三模型能力的官方脚本；如果都不满足则停止，不复制/patch 官方脚本。
+- Shell wrapper 禁止使用 zsh 特殊只读变量名 `status`；退出码变量统一使用 `rc`。
+
+未知：
+
+> DeepSeek 官方文档与不同 CDN shell 资产之间出现版本不一致的具体发布/缓存机制尚未确认，不做推测。
+
+状态：
+
+> 代码已合并；目标 Mac 实机 POC 待验证。
+
 
 ## Decision 013 — DeepSeek 模型菜单必须来自官方最新脚本并做能力校验
 
@@ -437,7 +462,7 @@ V1 处理：
 
 当前：
 
-> V1.3.4 Hotfix 已合并 / 待目标 Mac 实机 POC。
+> V1.3.5 Hotfix 已合并 / 待目标 Mac 实机 POC。
 
 待实机 POC：
 

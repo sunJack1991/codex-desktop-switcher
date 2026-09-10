@@ -11,7 +11,7 @@
 然后在 macOS Terminal 直接运行：
 
 ```zsh
-/bin/zsh -c 'tmp="$(mktemp -t codex-switcher-bootstrap)"; curl -fsSL https://raw.githubusercontent.com/sunJack1991/codex-switcher/main/bootstrap.sh -o "$tmp" && /bin/zsh "$tmp"; status=$?; rm -f "$tmp"; exit $status'
+/bin/zsh -c 'tmp="$(mktemp -t codex-switcher-bootstrap)"; curl -fsSL https://raw.githubusercontent.com/sunJack1991/codex-switcher/main/bootstrap.sh -o "$tmp" && /bin/zsh "$tmp"; rc=$?; rm -f "$tmp"; exit $rc'
 ```
 
 该命令会：
@@ -24,12 +24,12 @@
 
 2. 初始化 codex-switcher。
 3. 保存当前已确认可用的 GPT Profile。
-4. 强制刷新并校验 **DeepSeek 官方 Codex setup**；只有检测到 Flash / Pro / Vision 三个模型版本才继续。若发现上次失败留下的 `backup-deepseek` 状态，会先安全恢复或隔离旧备份。
+4. 按 DeepSeek 官方原始 URL 下载并校验 **DeepSeek Codex setup**；依次尝试官方 `codex-deepseek-setup.sh` 与 `codex-deepseek-setup-en.sh`，选择实际包含 Flash / Pro / Vision 三个模型的版本。若发现上次失败留下的 `backup-deepseek` 状态，会先安全恢复或隔离旧备份。
 5. 提示选择 DeepSeek 模型（1=Flash、2=Pro、3=Vision）并输入 API Key。
 6. 检查 `config.toml` / `models.json` 和本地 Profile。
 7. 在安装、DeepSeek 接入、Profile 保存及最终初始化成功时分别输出 `✅` 提示。
 
-> DeepSeek 官方 setup 仍然需要首次人工选择模型并输入 API Key。当前官方文档列出三个 Codex 模型：`deepseek-v4-flash`、`deepseek-v4-pro`、`deepseek-v4-flash-vision-exp`。bootstrap 会绕过缓存重新下载，并在执行前验证 Vision 模型标识；缺少第三个模型时直接停止，不再让用户误装旧脚本。若检测到旧 `backup-deepseek` 与当前 GPT 状态冲突，旧备份不会被直接删除，而是改名保留为 `~/.codex/backup-deepseek.stale-时间戳`。
+> DeepSeek 官方 setup 仍然需要首次人工选择模型并输入 API Key。当前官方文档列出三个 Codex 模型：`deepseek-v4-flash`、`deepseek-v4-pro`、`deepseek-v4-flash-vision-exp`。实机已经证明“给 CDN URL 加 cache-buster 就一定拿到最新版”的假设不成立，因此 V1.3.5 改为使用官方原始 URL，并在两个 DeepSeek 官方 shell 资产之间做能力校验；两者都缺少 Vision 时直接停止，不自行拼接官方配置。若检测到旧 `backup-deepseek` 与当前 GPT 状态冲突，旧备份不会被直接删除，而是改名保留为 `~/.codex/backup-deepseek.stale-时间戳`。
 
 安装成功后，本机固定使用：
 
@@ -46,7 +46,7 @@ $HOME/.codex/switcher/
 已安装时运行：
 
 ```zsh
-/bin/zsh -c 'tmp="$(mktemp -t codex-switcher-uninstall)"; curl -fsSL https://raw.githubusercontent.com/sunJack1991/codex-switcher/main/uninstall.sh -o "$tmp" && /bin/zsh "$tmp"; status=$?; rm -f "$tmp"; exit $status'
+/bin/zsh -c 'tmp="$(mktemp -t codex-switcher-uninstall)"; curl -fsSL https://raw.githubusercontent.com/sunJack1991/codex-switcher/main/uninstall.sh -o "$tmp" && /bin/zsh "$tmp"; rc=$?; rm -f "$tmp"; exit $rc'
 ```
 
 > 这条命令会先下载 **GitHub main 上最新的卸载脚本** 再执行，因此即使本机是旧版本、`$HOME/.codex/switcher/uninstall.sh` 还不存在，也能卸载。若本机已更新，也可以直接运行 `/bin/zsh "$HOME/.codex/switcher/uninstall.sh"`。
@@ -98,7 +98,7 @@ $HOME/.codex/switcher/
 
 ## 当前状态
 
-V1.3.4 Hotfix 已合并到 main，待目标 Mac 实机 POC。新增 DeepSeek 官方 setup 的强制刷新与三模型校验，确保一键初始化只能继续执行包含 `deepseek-v4-flash`、`deepseek-v4-pro`、`deepseek-v4-flash-vision-exp` 的当前版本，避免 CDN/本地缓存返回旧的两模型脚本。
+V1.3.5 Hotfix 已合并到 main，待目标 Mac 实机 POC。撤销 V1.3.4 的 cache-buster 假设：一键初始化现在按 DeepSeek 官方原始 URL 获取脚本，并在 `codex-deepseek-setup.sh` / `codex-deepseek-setup-en.sh` 两个官方 CDN 资产中选择实际包含 Vision 的三模型版本；同时修复 README 一键命令使用 zsh 只读变量 `status` 导致的二次报错。
 
 正常切换完全静默，失败信息写入 stderr。
 

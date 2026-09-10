@@ -6,6 +6,28 @@
 
 # Version History
 
+# V1.3.5 — Official URL Fallback / zsh Wrapper Fix
+
+日期：2026-09-10  
+状态：已合并 main，待目标 Mac 实机验证
+
+- 修复 V1.3.4 在截图对应 Mac 上“强制绕过缓存后仍下载到两模型脚本”的问题。
+- 撤销未经实机验证的“cache-buster = 最新官方脚本”假设；不再给 DeepSeek CDN URL 追加 query，也不再发送自定义 no-cache 请求头。
+- bootstrap 现在依次尝试两个 DeepSeek 官方 CDN shell 资产：`codex-deepseek-setup.sh`、`codex-deepseek-setup-en.sh`。
+- 仅选择实际包含 `deepseek-v4-flash-vision-exp` 的脚本执行；两者都不满足时停止，不自行拼接或修改 DeepSeek 官方配置。
+- 修复 README 的一键初始化 / 一键卸载命令使用 `status=$?` 的问题。zsh 中 `status` 是只读特殊参数，现统一改为 `rc=$?`，避免 `read-only variable: status`。
+- 根因仍有未知项：DeepSeek 官方文档当前明确列出三模型，但不同官方 CDN shell 资产/区域返回内容可能存在短时版本差异；Switcher 只做能力检测，不猜服务端发布机制。
+
+## 待实机 POC
+
+- 重新执行 README 顶部一键初始化，确认不再出现 `read-only variable: status`。
+- 确认 bootstrap 输出“已获取 DeepSeek 官方三模型 setup”，并显示其实际采用的官方脚本 URL。
+- DeepSeek 菜单应出现 1=Flash、2=Pro、3=Vision、9=Restore。
+- 若两个官方 URL 都没有 Vision，应安全停止且不改配置。
+
+---
+
+
 # V1.3.4 — Force Latest DeepSeek 3-Model Setup
 
 日期：2026-09-10  

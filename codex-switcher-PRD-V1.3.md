@@ -1,6 +1,6 @@
 # codex-switcher-PRD-V1.3
 
-版本：V1.3.4 Hotfix（基于 V1.3）  
+版本：V1.3.5 Hotfix（基于 V1.3）  
 日期：2026-09-10  
 状态：V1.3 代码已落 / 待实机 POC；此前 V1.1 已完成
 
@@ -144,7 +144,7 @@
 2. 保存 DeepSeek `models.json`。
 3. 恢复 Codex GPT。
 4. 保存已验证可用的 GPT 配置快照。
-5. 下载 DeepSeek 官方 setup 时强制绕过缓存，并校验当前三模型版本（Flash / Pro / Vision）。
+5. 从 DeepSeek 官方原始 CDN URL 获取 setup，依次尝试中文/默认与英文 shell 资产，并校验当前三模型版本（Flash / Pro / Vision）。
 6. 调用 DeepSeek 官方 setup 前检查 `backup-deepseek` 状态：不一致时优先官方 Restore 或保留并隔离旧备份。
 7. 创建本地 Switcher 目录。
 6. 创建两个 macOS 快捷入口。
@@ -398,7 +398,8 @@ North Star Metric：
 3. Codex 更新后配置格式变化。
 4. DeepSeek `models.json` 残留到 GPT，导致 GPT 启动后仍读取第三方模型目录或出现异常。
 5. DeepSeek 官方 `backup-deepseek` 与当前配置不一致，导致官方 setup 为保护备份而主动中止。
-6. 固定 CDN URL 返回旧版官方 setup，菜单只显示两个模型，与当前官方三模型能力不一致。
+6. DeepSeek 官方文档与某个官方 CDN shell 资产可能短时版本不一致，菜单只显示两个模型，与当前官方三模型能力不一致。
+7. zsh wrapper 使用特殊只读变量名 `status`，失败路径产生 `read-only variable: status` 二次错误。
 
 应对：
 
@@ -409,7 +410,8 @@ North Star Metric：
 - 用户手工修改 Codex 配置后，需要重新生成 Profile 快照。
 - GPT Profile 同时记录 `models.json` 存在/不存在的已验证基线；旧安装只对与 DeepSeek 快照完全一致的 `models.json` 做自动清理。
 - bootstrap 不直接删除 DeepSeek 官方备份：DeepSeek 不完整态优先官方 Restore；GPT 态残留旧备份则时间戳归档后重建。
-- bootstrap 对 DeepSeek 官方 setup 强制 no-cache，并在执行前校验 `deepseek-v4-flash-vision-exp`；旧版两模型脚本直接拒绝执行。
+- bootstrap 不再假设 cache-buster 能保证版本新鲜度；改为依次验证两个 DeepSeek 官方 shell 资产，选择包含 `deepseek-v4-flash-vision-exp` 的版本，旧版两模型脚本拒绝执行。
+- 一键命令退出码变量使用 `rc`，避免 zsh 的 `status` 只读参数冲突。
 
 ## P1
 
