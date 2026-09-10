@@ -6,6 +6,28 @@
 
 # Version History
 
+# V1.3.3 — Bootstrap Stale DeepSeek State Recovery
+
+日期：2026-09-10  
+状态：已合并 main，待目标 Mac 实机验证
+
+- 修复一键初始化在 `~/.codex/backup-deepseek` 已存在、但 `~/.codex/models.json` 缺失时，DeepSeek 官方 setup 拒绝继续的问题。
+- 当前仍是 DeepSeek 且 models 缺失时，bootstrap 会调用 DeepSeek 官方 Restore（选项 9）先恢复，再继续初始化。
+- 当前已是 GPT、但残留旧 `backup-deepseek` 时，不覆盖当前 GPT 配置；将旧备份改名保存为 `backup-deepseek.stale-时间戳`，随后让官方 setup 基于当前 GPT 状态创建新备份。
+- 修复 `temp_script` 使用函数局部变量配合 EXIT trap，在失败退出时触发 `parameter not set` 的二次错误；改为全局受控临时路径 + 幂等 cleanup。
+- `bootstrap.sh` 同时将 `uninstall.sh` 纳入 chmod 初始化，确保本地脚本可直接执行。
+- 不删除历史 DeepSeek 官方备份，不自动猜测 GPT 配置。
+
+## 待实机 POC
+
+- 在本次截图所示的“backup-deepseek 已存在 + models.json 缺失”机器上重新执行 README 顶部一键初始化。
+- 验证不再出现 `Missing ~/.codex/models.json` 中止。
+- 验证失败路径不再出现 `temp_script: parameter not set`。
+- 完成 DeepSeek 实际调用后再保存 Profile。
+
+---
+
+
 # V1.3.2 — GPT Models Restore / Stale Uninstall Hotfix
 
 日期：2026-09-10  

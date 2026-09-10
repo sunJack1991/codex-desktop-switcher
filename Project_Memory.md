@@ -29,7 +29,7 @@
 
 当前版本：
 
-> V1.3.2 Hotfix 已合并 / 待目标 Mac 实机 POC
+> V1.3.3 Hotfix 已合并 / 待目标 Mac 实机 POC
 
 已完成：
 
@@ -54,6 +54,27 @@
 ---
 
 # 3. 关键决策记录
+
+## Decision 012 — DeepSeek 官方 backup-deepseek 视为外部状态机，不直接删除
+
+日期：2026-09-10
+
+问题：
+
+> DeepSeek 官方 setup 自己维护 `~/.codex/backup-deepseek`。当 Switcher 或上一次失败流程使当前 `config.toml/models.json` 与该备份状态不一致时，官方脚本会主动中止，导致“一键初始化”无法重入。
+
+决策：
+
+- bootstrap 在调用官方 setup 前先检查官方备份状态。
+- 当前仍为 DeepSeek 且 `models.json` 缺失：按官方建议调用 Restore（9），不手工拼配置。
+- 当前已为 GPT 但旧 `backup-deepseek` 仍存在：不让旧备份覆盖当前 GPT；将旧目录重命名归档后，让官方 setup 重新生成一致的新备份。
+- 旧备份只移动保留，不删除。
+- 临时官方脚本的 cleanup 必须在 `set -u` 下安全，禁止局部变量 EXIT trap 再次报错。
+
+状态：
+
+> 代码已合并，截图对应 Mac 实机重试待验证。
+
 
 ## Decision 011 — GPT models.json 必须按已验证基线恢复
 
@@ -395,7 +416,7 @@ V1 处理：
 
 当前：
 
-> V1.3.2 Hotfix 已合并 / 待目标 Mac 实机 POC。
+> V1.3.3 Hotfix 已合并 / 待目标 Mac 实机 POC。
 
 待实机 POC：
 

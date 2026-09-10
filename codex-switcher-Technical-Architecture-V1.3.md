@@ -1,6 +1,6 @@
 # codex-switcher-Technical-Architecture-V1.3
 
-版本：V1.3.2 Hotfix（基于 V1.3）  
+版本：V1.3.3 Hotfix（基于 V1.3）  
 最后更新时间：2026-09-10  
 状态：代码已落 / 待实机 POC；此前 V1.1 Completed
 
@@ -236,6 +236,31 @@ chmod 600 "$HOME/.codex/switcher/profiles/gpt.toml"
 原则：
 
 > Profile 必须来自真实可用状态，不手工拼完整配置。
+
+---
+
+## 7.3 DeepSeek 官方状态预检
+
+DeepSeek 官方 setup 自身维护：
+
+```text
+~/.codex/backup-deepseek/
+```
+
+V1.3.3 在首次/重入初始化时增加最小状态修复：
+
+1. 没有 `backup-deepseek`：直接执行官方 setup。
+2. 当前为完整 DeepSeek（config 为 DeepSeek 且 models.json 存在）：交给官方 setup 自己处理。
+3. 当前为 DeepSeek 但 models.json 缺失：调用同一份官方 setup 的 Restore 选项 9，成功恢复后再继续。
+4. 当前不是 DeepSeek但仍残留 `backup-deepseek`：将目录改名为 `backup-deepseek.stale-时间戳` 保留，不覆盖当前 GPT；随后官方 setup 创建新的备份。
+
+禁止：
+
+- 直接删除未知官方备份。
+- 手工伪造 DeepSeek 官方 manifest/backup 状态。
+- 为绕过保护逻辑而强制覆盖当前配置。
+
+临时官方 setup 脚本使用全局受控临时路径，并由幂等 cleanup 处理 EXIT/HUP/INT/TERM，避免 `set -u` 下局部变量离开作用域后触发二次异常。
 
 ---
 
@@ -594,6 +619,8 @@ V1 解决方法：
 - GPT models 快照 / absent 基线捕获与恢复。
 - 旧安装 DeepSeek models 安全清理。
 - 安全卸载保留未知 models.json 与 auth.json。
+- bootstrap 对 DeepSeek 官方 stale backup 状态进行 Restore/归档，不直接删除。
+- bootstrap 失败退出时临时脚本 cleanup 不产生二次 `parameter not set`。
 - Profile 捕获与 700 / 600 权限。
 
 真实端到端目标仍为：
