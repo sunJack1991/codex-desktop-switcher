@@ -1,6 +1,6 @@
 # codex-switcher-Technical-Architecture-V1.3
 
-版本：V1.3.6 Hotfix（基于 V1.3）  
+版本：V1.3.7 Hotfix（基于 V1.3）  
 最后更新时间：2026-09-10  
 状态：代码已落 / 待实机 POC；此前 V1.1 Completed
 
@@ -239,42 +239,58 @@ chmod 600 "$HOME/.codex/switcher/profiles/gpt.toml"
 
 ---
 
-## 7.3 DeepSeek 官方 setup 来源与能力校验
+## 7.3 DeepSeek 官方 setup 来源与 CDN 旧版兼容
 
-V1.3.6 的原则是与 DeepSeek 官方当前 Codex 安装命令完全同源。
-
-唯一下载 URL：
+V1.3.7 继续只信任 DeepSeek 官方 Codex 文档明确给出的安装入口：
 
 ```text
 https://cdn.deepseek.com/api-docs/codex-deepseek-setup-en.sh
 ```
 
-流程：
+实机已经证明：官方页面声明三模型时，同一官方 CDN URL 仍可能返回尚未包含 Vision 的两模型脚本。因此“脚本是否含 Vision”从阻断条件改为分流条件：
 
 ```text
 官方原始 URL
 ↓
 curl -fsSL（不加 query/header）
 ↓
-保存到临时文件
-↓
 grep deepseek-v4-flash-vision-exp
-├─ 有 → 执行同一文件
-└─ 无 → 安全停止，并提示直接运行官方命令做 A/B 对照
+├─ 有
+│  └─ 原样执行官方三模型 setup
+└─ 无
+   ├─ Switcher 记录用户最终目标模型 1 / 2 / 3
+   ├─ 执行官方旧 setup，让它负责 API Key、备份、config.toml 与本机兼容 models.json
+   ├─ 从刚生成的 deepseek-v4-flash 条目复制一个 Vision 条目
+   ├─ 仅覆盖 DeepSeek 当前官方文档明确的 Vision 差异字段
+   ├─ plutil 校验 + 原子替换 models.json
+   ├─ 私有备份 config.toml
+   └─ 只替换顶层 model 为用户目标模型
 ```
 
-当前最低能力断言：
+Vision 差异字段：
 
-> 被执行的官方 setup 必须包含 `deepseek-v4-flash-vision-exp`，因为 DeepSeek 当前官方 Codex 文档明确列出 1=Flash、2=Pro、3=Vision、9=Restore。
+- `slug = deepseek-v4-flash-vision-exp`
+- `display_name = DeepSeek-V4-Flash-Vision`
+- `description = Latest frontier agentic coding model with image input.`
+- `input_modalities = [text, image]`
+- `supports_image_detail_original = true`
+- `priority = 3`
+- 如果旧 catalog 已存在 `minimal_client_version` 字段，则按当前官方文档更新为 `0.144.0`
+
+其余字段全部继承“本次官方旧脚本刚生成的 Flash 条目”，包括 schema、context、reasoning、tool、instructions 等，避免在 Switcher 中维护一份会随 Codex 版本漂移的完整 catalog。
+
+实现边界：
+
+- 只使用 macOS 原生 `plutil`、`PlistBuddy`、`awk`，不引入 Python / Node。
+- 不修改或 fork 下载到的 DeepSeek 官方 shell。
+- API Key 仍完全由 DeepSeek 官方 setup 处理；兜底代码不读取、不输出 Secret。
+- `models.json` 在临时文件完成转换和校验后才原子覆盖。
+- Switcher 修改 `config.toml` 前先写入 `~/.codex/switcher/backups/bootstrap_config_*.toml`，只修改第一个 TOML section 之前的顶层 `model`。
+- 任一步失败都不保存 DeepSeek Profile，保留官方脚本已经生成的可恢复状态。
 
 原则：
 
-- 不追加 cache-buster query。
-- 不添加自定义缓存请求头。
-- 不猜测或尝试未由当前官方文档明确给出的备用 shell endpoint。
-- 不在 Switcher 中复制、patch 或重写 DeepSeek 官方模型菜单。
-- 不自行生成 Vision 模型配置。
-- 如果同一机器上的官方命令和 bootstrap 结果不一致，后续诊断必须比较实际响应/哈希，而不是继续猜 CDN 行为。
+> 官方脚本负责“生成可兼容基线”，Switcher 只在确认 CDN 落后于官方文档时补一个最小、可验证的 Vision 差异。
 
 ## 7.4 DeepSeek 官方状态预检
 
@@ -656,7 +672,7 @@ V1 解决方法：
 - GPT models 快照 / absent 基线捕获与恢复。
 - 旧安装 DeepSeek models 安全清理。
 - 安全卸载保留未知 models.json 与 auth.json。
-- bootstrap 严格使用 DeepSeek 官方文档当前给出的 `codex-deepseek-setup-en.sh`，不允许旧两模型脚本继续执行。
+- bootstrap 严格使用 DeepSeek 官方文档当前给出的 `codex-deepseek-setup-en.sh`；若 CDN 返回旧两模型脚本，则用其生成的本机兼容 Flash 条目最小派生 Vision，并在原子校验后继续。
 - README zsh wrapper 使用 `rc` 保存退出码，避免只读 `status` 变量。
 - bootstrap 对 DeepSeek 官方 stale backup 状态进行 Restore/归档，不直接删除。
 - bootstrap 失败退出时临时脚本 cleanup 不产生二次 `parameter not set`。

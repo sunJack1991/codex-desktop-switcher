@@ -24,12 +24,12 @@
 
 2. 初始化 codex-switcher。
 3. 保存当前已确认可用的 GPT Profile。
-4. 严格按 DeepSeek 官方文档当前给出的原始 `codex-deepseek-setup-en.sh` URL 下载并校验 **DeepSeek Codex setup**；不追加 query/header。脚本必须实际包含 Flash / Pro / Vision 三个模型才继续。若发现上次失败留下的 `backup-deepseek` 状态，会先安全恢复或隔离旧备份。
-5. 提示选择 DeepSeek 模型（1=Flash、2=Pro、3=Vision）并输入 API Key。
+4. 按 DeepSeek 官方文档当前给出的原始 `codex-deepseek-setup-en.sh` URL 下载 **DeepSeek Codex setup**，不追加 query/header。若脚本已包含 Flash / Pro / Vision，则原样执行；若官方 CDN 仍返回旧两模型脚本，则启用兼容兜底：先让官方脚本生成与本机 Codex 兼容的配置，再从官方 Flash 条目派生文档已声明的 Vision 条目。若发现上次失败留下的 `backup-deepseek` 状态，会先安全恢复或隔离旧备份。
+5. 三模型脚本直接使用官方菜单；旧两模型兜底时由 Switcher 先选择最终模型（1=Flash、2=Pro、3=Vision），再进入旧官方菜单输入 API Key，完成后自动切到目标模型。
 6. 检查 `config.toml` / `models.json` 和本地 Profile。
 7. 在安装、DeepSeek 接入、Profile 保存及最终初始化成功时分别输出 `✅` 提示。
 
-> DeepSeek 官方 setup 仍然需要首次人工选择模型并输入 API Key。当前官方文档列出三个 Codex 模型：`deepseek-v4-flash`、`deepseek-v4-pro`、`deepseek-v4-flash-vision-exp`，并明确给出 `codex-deepseek-setup-en.sh` 作为 macOS/Linux 一键安装脚本。V1.3.6 与官方命令保持同一原始 URL；如果同一台机器直接运行官方命令能看到 3 个模型，而 bootstrap 校验仍失败，就说明需要继续比较两次 curl 的实际响应，不能再靠猜测修复。若检测到旧 `backup-deepseek` 与当前 GPT 状态冲突，旧备份不会被直接删除，而是改名保留为 `~/.codex/backup-deepseek.stale-时间戳`。
+> DeepSeek 官方文档当前明确列出三个 Codex 模型：`deepseek-v4-flash`、`deepseek-v4-pro`、`deepseek-v4-flash-vision-exp`，并给出 `codex-deepseek-setup-en.sh` 作为 macOS/Linux 一键安装脚本。V1.3.7 仍以该官方脚本为配置事实源；只有实际下载内容缺少 Vision 时才进入兼容兜底。兜底不维护一份静态完整 `models.json`，而是复制官方旧脚本刚生成的 Flash 条目，仅改写 DeepSeek 当前文档明确的 Vision 差异字段，因此继续继承本机 Codex 所需的其余 schema / instructions 字段。API Key 仍由官方脚本写入，Switcher 不读取、不打印。若检测到旧 `backup-deepseek` 与当前 GPT 状态冲突，旧备份不会被直接删除，而是改名保留为 `~/.codex/backup-deepseek.stale-时间戳`。
 
 安装成功后，本机固定使用：
 
@@ -98,7 +98,7 @@ $HOME/.codex/switcher/
 
 ## 当前状态
 
-V1.3.6 Hotfix 已合并到 main，待目标 Mac 实机 POC。初始化现在严格使用 DeepSeek 官方文档当前给出的原始 `codex-deepseek-setup-en.sh` URL，不加 query、不加缓存请求头、不猜其他脚本地址；下载后仅做三模型能力校验。同时保留 V1.3.5 对 zsh 只读变量 `status` 的修复，退出码统一使用 `rc`。
+V1.3.7 Hotfix 已合并到 main，待目标 Mac 实机 POC。初始化继续只下载 DeepSeek 官方文档给出的原始 `codex-deepseek-setup-en.sh`；三模型版本原样执行，旧两模型版本进入本机兼容兜底，不再因为 CDN 发布不同步直接终止。兜底仅补齐 Vision 模型目录并在备份后改写顶层 `model`，不触碰 API Key、`auth.json` 或项目配置。
 
 正常切换完全静默，失败信息写入 stderr。
 
@@ -213,6 +213,7 @@ state
 ./tests/test-switcher.zsh
 ./tests/test-setup.zsh
 ./tests/test-uninstall.zsh
+./tests/test-bootstrap.zsh
 ```
 
 测试只使用临时目录，不会退出真实 Codex，也不会读写真实 Profile。

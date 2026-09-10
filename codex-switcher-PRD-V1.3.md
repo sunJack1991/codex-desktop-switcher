@@ -1,6 +1,6 @@
 # codex-switcher-PRD-V1.3
 
-版本：V1.3.6 Hotfix（基于 V1.3）  
+版本：V1.3.7 Hotfix（基于 V1.3）  
 日期：2026-09-10  
 状态：V1.3 代码已落 / 待实机 POC；此前 V1.1 已完成
 
@@ -144,7 +144,7 @@
 2. 保存 DeepSeek `models.json`。
 3. 恢复 Codex GPT。
 4. 保存已验证可用的 GPT 配置快照。
-5. 从 DeepSeek 官方 Codex 文档当前明确给出的原始 `codex-deepseek-setup-en.sh` URL 获取 setup，并校验当前三模型版本（Flash / Pro / Vision）。
+5. 从 DeepSeek 官方 Codex 文档当前明确给出的原始 `codex-deepseek-setup-en.sh` URL 获取 setup；三模型版本原样执行，若 CDN 实际返回旧两模型版本，则基于该官方脚本生成的本机兼容 catalog 最小补齐 Vision，再进入人工可用性确认。
 6. 调用 DeepSeek 官方 setup 前检查 `backup-deepseek` 状态：不一致时优先官方 Restore 或保留并隔离旧备份。
 7. 创建本地 Switcher 目录。
 6. 创建两个 macOS 快捷入口。
@@ -410,7 +410,7 @@ North Star Metric：
 - 用户手工修改 Codex 配置后，需要重新生成 Profile 快照。
 - GPT Profile 同时记录 `models.json` 存在/不存在的已验证基线；旧安装只对与 DeepSeek 快照完全一致的 `models.json` 做自动清理。
 - bootstrap 不直接删除 DeepSeek 官方备份：DeepSeek 不完整态优先官方 Restore；GPT 态残留旧备份则时间戳归档后重建。
-- bootstrap 与 DeepSeek 官方当前安装 URL 完全一致，不追加 query/header、不猜备用 endpoint；下载后校验 `deepseek-v4-flash-vision-exp`，两模型脚本拒绝执行。
+- bootstrap 与 DeepSeek 官方当前安装 URL 完全一致，不追加 query/header、不猜备用 endpoint；若下载内容缺少 `deepseek-v4-flash-vision-exp`，不再直接失败，而是让旧官方脚本先生成本机兼容配置，再从其 Flash 条目派生 Vision，仅覆盖官方文档明确差异字段；补齐失败则不覆盖原 catalog，也不保存 DeepSeek Profile。
 - 一键命令退出码变量使用 `rc`，避免 zsh 的 `status` 只读参数冲突。
 
 ## P1

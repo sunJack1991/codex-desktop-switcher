@@ -6,6 +6,31 @@
 
 # Version History
 
+# V1.3.7 — DeepSeek stale CDN three-model fallback
+
+日期：2026-09-10  
+状态：已合并 main，待目标 Mac 实机验证
+
+## 修复
+
+- 修复 DeepSeek 官方页面已声明三模型、但官方 CDN shell 仍返回两模型时 bootstrap 直接终止的问题。
+- 保持唯一官方入口 `codex-deepseek-setup-en.sh`；不再尝试 query/cache-buster/猜测备用地址。
+- 三模型脚本继续原样执行；两模型脚本进入兼容兜底。
+- 兜底先运行官方旧脚本生成当前 Mac/Codex 兼容的 `config.toml` 和 `models.json`，再从 Flash 条目复制 Vision。
+- Vision 只覆盖官方当前文档明确差异：slug、display name、description、image modality、image detail、priority，以及已有时的 minimum client version。
+- 使用 macOS 原生 `plutil` / `PlistBuddy` 校验和原子替换 catalog，不增加 Python / Node 依赖。
+- 用户最终模型选择只在 `config.toml` 私有备份成功后修改顶层 `model`；API Key 与 `auth.json` 不触碰。
+- 新增 `tests/test-bootstrap.zsh`，覆盖两模型 catalog → 三模型派生、原字段继承、Vision 差异和顶层 model 最小替换。
+
+## 待实机 POC
+
+- 重新运行 README 顶部“一键初始化”命令。
+- 目标 Mac 若仍拿到旧 shell，应看到“启用兼容兜底”，而不是直接报错退出。
+- 选择最终目标 1 / 2 / 3 后，在旧官方菜单选择 1 或 2、输入 API Key。
+- 完成后 Codex 模型目录应包含 Flash / Pro / Vision，并要求人工确认 DeepSeek 实际可回复。
+
+---
+
 # V1.3.6 — Exact Official DeepSeek Setup URL
 
 日期：2026-09-10  

@@ -29,7 +29,7 @@
 
 当前版本：
 
-> V1.3.6 Hotfix 已合并 / 待目标 Mac 实机 POC
+> V1.3.7 Hotfix 已合并 / 待目标 Mac 实机 POC
 
 已完成：
 
@@ -54,6 +54,36 @@
 ---
 
 # 3. 关键决策记录
+
+## Decision 016 — 官方 CDN 旧两模型脚本改为“官方基线 + 最小 Vision 派生”
+
+日期：2026-09-10
+
+实机证据：
+
+> DeepSeek 官方 Codex 页面已经明确列出 Flash / Pro / Vision 三模型，但目标 Mac 从页面所给同一 `codex-deepseek-setup-en.sh` URL 实际下载到的脚本仍不含 `deepseek-v4-flash-vision-exp`。V1.3.6 因硬能力断言直接中止，导致首次初始化不可完成。
+
+决策：
+
+- 继续只下载官方文档给出的原始 shell URL，不猜备用 endpoint，不改 URL。
+- 脚本已经含 Vision：完全原样执行。
+- 脚本缺 Vision：不再停止；先执行这个官方旧脚本，让它生成与当前 Codex 客户端匹配的 `config.toml` 和两模型 `models.json`。
+- Vision 不使用 Switcher 内置的静态完整 catalog；从本次官方 Flash 条目复制，只覆盖当前 DeepSeek 官方文档明确的 Vision 差异字段。
+- catalog 修改只用 macOS 原生 `plutil` / `PlistBuddy`，临时文件校验通过后原子替换。
+- 顶层 `model` 的最终选择在备份 `config.toml` 后用 `awk` 最小替换；不读取或改写 API Key。
+- 补齐后仍必须由用户在 Codex 中实际验证成功，才允许保存 DeepSeek Profile。
+
+边际收益：
+
+> 解除 DeepSeek 文档/CDN 发布不同步对首次初始化的硬阻塞，同时继续复用官方脚本针对本机 Codex 版本生成的大部分模型元数据。
+
+边际成本：
+
+> 新增一条仅在 CDN 旧版时运行的 macOS 原生兼容分支，需要目标 Mac 做一次真实 POC。
+
+状态：
+
+> V1.3.7 已落 main；待目标 Mac 首次初始化 POC。
 
 ## Decision 015 — Bootstrap 必须与 DeepSeek 官方当前安装 URL 完全对齐
 
@@ -483,7 +513,7 @@ V1 处理：
 
 当前：
 
-> V1.3.6 Hotfix 已合并 / 待目标 Mac 实机 POC。
+> V1.3.7 Hotfix 已合并 / 待目标 Mac 实机 POC。
 
 待实机 POC：
 
